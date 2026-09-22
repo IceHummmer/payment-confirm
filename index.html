@@ -224,6 +224,7 @@ const shortMonth=s=>{const a=String(s).split('-');return a.length===2?a[1]+'.'+a
 const formatDate=s=>{if(!s)return'—';const a=s.split('-').map(Number);return new Intl.DateTimeFormat('uk-UA',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(a[0],a[1]-1,a[2]))};
 const fmt=n=>new Intl.NumberFormat('uk-UA',{maximumFractionDigits:4}).format(n);
 const round5=n=>Math.round(n/5)*5;
+const ceil5=n=>Math.ceil(num(n)/5)*5;
 const amountText=(n,c)=>{n=num(n);if(c==='UAH')return new Intl.NumberFormat('uk-UA',{maximumFractionDigits:0}).format(n)+' грн';if(c==='EUR')return '€'+new Intl.NumberFormat('uk-UA',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);return '$'+new Intl.NumberFormat('uk-UA',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)};
 const emptyMoney=()=>({UAH:0,USD:0,EUR:0});
 const addMoney=(a,b)=>{const r={...a};Object.keys(r).forEach(k=>r[k]+=num(b[k]));return r};
@@ -307,7 +308,7 @@ function serviceShare(member,service){
  const count=Math.max(1,participants(service.id,member.groupId));
  if(a.mode==='CUSTOM')return{currency:a.customCurrency||'UAH',amount:num(a.customAmount)};
  if(a.mode==='SERVICE')return{currency:service.currency,amount:service.currency==='UAH'?round5(num(service.amount)/count):Math.round(num(service.amount)/count*100)/100};
- return{currency:'UAH',amount:round5(serviceTotalUAH(service)/count)};
+ return{currency:'UAH',amount:ceil5(serviceTotalUAH(service)/count)};
 }
 function currentDue(member){
  let m=emptyMoney();
@@ -591,7 +592,7 @@ $('importFile').addEventListener('change',async()=>{
 $('resetBtn').addEventListener('click',()=>{if(confirm('Повністю очистити всі дані цього застосунку?')){state=defaultState();save();render();toast('Дані очищено')}});
 
 load();rollServiceDates();render();maybeRefreshRates();
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=7').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=8').catch(()=>{}));
 })();
 </script>
 </body>
