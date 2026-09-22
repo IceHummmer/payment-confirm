@@ -21,7 +21,8 @@ body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}button,input
 .nav button{border:1px solid var(--line);background:#fff;color:var(--text);padding:9px 13px;border-radius:999px;white-space:nowrap;font-weight:700}.nav button.active{background:var(--green);color:#fff;border-color:var(--green)}
 .view{display:none}.view.active{display:block}.grid{display:grid;gap:12px}.summary{grid-template-columns:repeat(4,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .card{background:var(--card);border:1px solid var(--line);border-radius:19px;padding:17px;box-shadow:var(--shadow)}.cardTitle{font-size:12px;color:var(--muted);margin-bottom:5px}
-.metric{font-size:28px;font-weight:820;letter-spacing:-.035em}.metricSmall{font-size:20px;font-weight:780}.section{margin-top:12px}.sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.sectionHead h2{font-size:18px;margin:0}
+.metric{font-size:28px;font-weight:820;letter-spacing:-.035em}.metricSmall{font-size:20px;font-weight:780}
+.paidSplit{display:grid;gap:8px;margin-top:7px}.paidSplitRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:7px;border-bottom:1px solid var(--line)}.paidSplitRow:last-child{border-bottom:0;padding-bottom:0}.paidSplitName{font-size:12px;color:var(--muted);font-weight:700}.paidSplitValue{font-size:20px;font-weight:820;white-space:nowrap}.section{margin-top:12px}.sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.sectionHead h2{font-size:18px;margin:0}
 .btn{border:0;border-radius:12px;min-height:43px;padding:9px 14px;background:var(--green);color:#fff;font-weight:750}.btn.secondary{background:var(--soft);color:var(--text);border:1px solid var(--line)}.btn.danger{background:#fff;color:var(--red);border:1px solid #efc8c4}.btn.smallBtn{min-height:36px;padding:7px 10px;font-size:12px}.btn:disabled{opacity:.45;cursor:default}
 .field{display:grid;gap:5px}.field label{font-size:12px;color:var(--muted)}input,select,textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:12px;padding:9px 11px;background:#fff;color:var(--text);outline:none;font-size:16px}textarea{min-height:95px;resize:vertical}
 input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 0 0 3px rgba(47,116,91,.1)}
@@ -56,7 +57,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 <section class="view active" id="view-dashboard">
 <div class="grid summary">
 <div class="card"><div class="cardTitle">Поточний період</div><div class="metricSmall" id="cycleLabel"></div></div>
-<div class="card"><div class="cardTitle">Сплатили</div><div class="metric" id="paidCount">0/0</div></div>
+<div class="card">
+  <div class="cardTitle">Сплатили</div>
+  <div class="paidSplit" id="paidByGroup"></div>
+</div>
 <div class="card"><div class="cardTitle">З боргом</div><div class="metric" id="debtCount">0</div></div>
 <div class="card"><div class="cardTitle">Активні сервіси</div><div class="metric" id="serviceCount">0</div></div>
 </div>
@@ -309,6 +313,18 @@ function totalDue(member){return addMoney(currentDue(member),member.debt||emptyM
 function memberServices(member){
  return state.services.filter(s=>member.assignments&&member.assignments[s.id]&&member.assignments[s.id].active!==false)
 }
+function groupPaymentStats(groupId){
+ let total=0,paid=0;
+ state.members.filter(m=>m.groupId===groupId).forEach(m=>{
+   memberServices(m).forEach(s=>{
+     const a=m.assignments&&m.assignments[s.id];
+     if(!a||a.active===false)return;
+     total++;
+     if(isPrepaid(a)||m.paid)paid++;
+   });
+ });
+ return{paid,total};
+}
 function debtMonthsText(n){if(!n)return'';const a=n%10,b=n%100,word=(a===1&&b!==11)?'місяць':(a>=2&&a<=4&&!(b>=12&&b<=14))?'місяці':'місяців';return'Борг за '+n+' '+word}
 function sortMembersByName(list){return [...list].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'uk',{sensitivity:'base'}))}
 function rollServiceDates(){
@@ -333,7 +349,11 @@ document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',(
 
 function renderDashboard(){
  $('cycleLabel').textContent=monthLabel(state.cycle);
- $('paidCount').textContent=state.members.filter(m=>m.paid).length+'/'+state.members.length;
+ const paymentGroups=state.groups.slice(0,2);
+ $('paidByGroup').innerHTML=paymentGroups.length?paymentGroups.map(g=>{
+   const st=groupPaymentStats(g.id);
+   return '<div class="paidSplitRow"><span class="paidSplitName">'+esc(g.name)+'</span><span class="paidSplitValue">'+st.paid+'/'+st.total+'</span></div>';
+ }).join(''):'<div class="small">Груп немає</div>';
  $('debtCount').textContent=state.members.filter(m=>m.debtMonths>0).length;
  $('serviceCount').textContent=state.services.length;
  if(!state.members.length){$('paymentList').innerHTML='<div class="empty">Додайте учасників у розділі «Учасники».</div>';return}
@@ -558,7 +578,7 @@ $('importFile').addEventListener('change',async()=>{
 $('resetBtn').addEventListener('click',()=>{if(confirm('Повністю очистити всі дані цього застосунку?')){state=defaultState();save();render();toast('Дані очищено')}});
 
 load();rollServiceDates();render();maybeRefreshRates();
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=2').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=3').catch(()=>{}));
 })();
 </script>
 </body>
