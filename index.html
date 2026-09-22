@@ -319,16 +319,11 @@ function memberServices(member){
  return state.services.filter(s=>member.assignments&&member.assignments[s.id]&&member.assignments[s.id].active!==false)
 }
 function groupPaymentStats(groupId){
- let total=0,paid=0;
- state.members.filter(m=>m.groupId===groupId).forEach(m=>{
-   memberServices(m).forEach(s=>{
-     const a=m.assignments&&m.assignments[s.id];
-     if(!a||a.active===false)return;
-     total++;
-     if(isPrepaid(a)||m.paid)paid++;
-   });
- });
- return{paid,total};
+ const members=state.members.filter(m=>m.groupId===groupId);
+ return{
+   paid:members.filter(m=>m.paid).length,
+   total:members.length
+ };
 }
 function debtMonthsText(n){if(!n)return'';const a=n%10,b=n%100,word=(a===1&&b!==11)?'місяць':(a>=2&&a<=4&&!(b>=12&&b<=14))?'місяці':'місяців';return'Борг за '+n+' '+word}
 function surnameSortKey(name){
@@ -595,7 +590,7 @@ $('importFile').addEventListener('change',async()=>{
 $('resetBtn').addEventListener('click',()=>{if(confirm('Повністю очистити всі дані цього застосунку?')){state=defaultState();save();render();toast('Дані очищено')}});
 
 load();rollServiceDates();render();maybeRefreshRates();
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=5').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=6').catch(()=>{}));
 })();
 </script>
 </body>
