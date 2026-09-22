@@ -150,7 +150,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 <div class="modalTop"><h2 id="memberModalTitle">Учасник</h2><button class="modalClose" data-close="memberModal">×</button></div>
 <form id="memberForm">
 <div class="formGrid">
-<div class="field"><label>Імʼя Прізвище</label><input id="memberName" required maxlength="80" placeholder="Наприклад, Ельвіна Більмак"></div>
+<div class="field"><label>Імʼя Прізвище</label><input id="memberName" required maxlength="80"></div>
 <div class="field"><label>Група</label><select id="memberGroup"></select></div>
 <div class="field full"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="memberExcluded" style="width:20px;height:20px;min-height:0"> Не включати до повідомлення про оплату</label></div>
 <div class="field full"><label>Примітка</label><input id="memberNote" maxlength="120"></div>
@@ -295,11 +295,16 @@ function effectiveRate(currency){
  return Math.max(dynamic,stat);
 }
 function serviceTotalUAH(s){if(s.currency==='UAH')return num(s.amount);return num(s.amount)*effectiveRate(s.currency)}
-function participants(serviceId){return state.members.filter(m=>m.assignments&&m.assignments[serviceId]&&m.assignments[serviceId].active!==false).length}
+function participants(serviceId,groupId){
+ return state.members.filter(m=>
+   (!groupId||m.groupId===groupId)&&
+   m.assignments&&m.assignments[serviceId]&&m.assignments[serviceId].active!==false
+ ).length
+}
 function isPrepaid(a){return !!(a&&a.prepaidUntil&&monthCmp(a.prepaidUntil,state.cycle)>=0)}
 function serviceShare(member,service){
  const a=member.assignments&&member.assignments[service.id];if(!a||a.active===false||isPrepaid(a))return null;
- const count=Math.max(1,participants(service.id));
+ const count=Math.max(1,participants(service.id,member.groupId));
  if(a.mode==='CUSTOM')return{currency:a.customCurrency||'UAH',amount:num(a.customAmount)};
  if(a.mode==='SERVICE')return{currency:service.currency,amount:service.currency==='UAH'?round5(num(service.amount)/count):Math.round(num(service.amount)/count*100)/100};
  return{currency:'UAH',amount:round5(serviceTotalUAH(service)/count)};
@@ -401,8 +406,10 @@ function renderServices(){
  $('ratesUpdated').textContent=state.rates.dynamic.lastUpdated?'Динамічний курс Monobank оновлено: '+new Intl.DateTimeFormat('uk-UA',{dateStyle:'short',timeStyle:'short'}).format(new Date(state.rates.dynamic.lastUpdated))+'. Для розрахунку автоматично використовується більший із динамічного та статичного курсів.':'Для розрахунку автоматично використовується більший із динамічного та статичного курсів.';
  if(!state.services.length){$('serviceList').innerHTML='<div class="empty">Сервісів немає.</div>';return}
  $('serviceList').innerHTML=state.services.map(s=>{
-   const p=participants(s.id),total=serviceTotalUAH(s);
-   return'<div class="serviceRow"><div><div class="rowTitle">'+esc(s.name)+(s.priceChanged?'<span class="badge changed">ціна змінена ‼️</span>':'')+'</div><div class="rowMeta">'+esc(amountText(s.amount,s.currency))+' · '+esc(amountText(total,'UAH'))+' · '+p+'/'+(s.capacity||p)+' учасників · '+formatDate(s.nextDate)+'</div></div><div class="rowActions"><button class="btn secondary smallBtn" data-edit-service="'+esc(s.id)+'">Редагувати</button></div></div>';
+   const total=serviceTotalUAH(s);
+   const familyCounts=state.groups.map(g=>({name:g.name,count:participants(s.id,g.id)})).filter(x=>x.count>0);
+   const countText=familyCounts.length?familyCounts.map(x=>x.name+': '+x.count).join(' · '):'учасників немає';
+   return'<div class="serviceRow"><div><div class="rowTitle">'+esc(s.name)+(s.priceChanged?'<span class="badge changed">ціна змінена ‼️</span>':'')+'</div><div class="rowMeta">'+esc(amountText(s.amount,s.currency))+' · '+esc(amountText(total,'UAH'))+' · '+esc(countText)+' · '+formatDate(s.nextDate)+'</div></div><div class="rowActions"><button class="btn secondary smallBtn" data-edit-service="'+esc(s.id)+'">Редагувати</button></div></div>';
  }).join('');
  document.querySelectorAll('[data-edit-service]').forEach(x=>x.addEventListener('click',()=>openService(x.dataset.editService)));
 }
@@ -588,7 +595,7 @@ $('importFile').addEventListener('change',async()=>{
 $('resetBtn').addEventListener('click',()=>{if(confirm('Повністю очистити всі дані цього застосунку?')){state=defaultState();save();render();toast('Дані очищено')}});
 
 load();rollServiceDates();render();maybeRefreshRates();
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=4').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=5').catch(()=>{}));
 })();
 </script>
 </body>
