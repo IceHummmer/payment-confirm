@@ -82,8 +82,20 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 <div class="card">
 <div class="sectionHead"><h2>Курси</h2><button class="btn secondary smallBtn" id="refreshRatesBtn">Оновити Monobank</button></div>
 <div class="rateGrid">
-<div class="rateBox"><div class="small">USD → UAH</div><div class="rateValue" id="usdRate"></div></div>
-<div class="rateBox"><div class="small">EUR → UAH</div><div class="rateValue" id="eurRate"></div></div>
+<div class="rateBox">
+  <div class="small" style="font-weight:760;margin-bottom:6px">USD → UAH</div>
+  <div class="small">Динамічний: <strong id="usdDynamic"></strong></div>
+  <div class="small">Статичний: <strong id="usdStatic"></strong></div>
+  <div class="small" style="margin-top:7px">Для розрахунку</div>
+  <div class="rateValue" id="usdRate"></div>
+</div>
+<div class="rateBox">
+  <div class="small" style="font-weight:760;margin-bottom:6px">EUR → UAH</div>
+  <div class="small">Динамічний: <strong id="eurDynamic"></strong></div>
+  <div class="small">Статичний: <strong id="eurStatic"></strong></div>
+  <div class="small" style="margin-top:7px">Для розрахунку</div>
+  <div class="rateValue" id="eurRate"></div>
+</div>
 </div>
 <div class="small" style="margin-top:9px" id="ratesUpdated"></div>
 </div>
@@ -104,8 +116,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 <div class="formGrid">
 <div class="field"><label>Поточний місяць</label><input type="month" id="cycleInput"></div>
 <div class="field"><label>День оновлення підписок</label><input type="number" min="1" max="28" id="billingDay"></div>
-<div class="field"><label>USD → UAH вручну</label><input inputmode="decimal" id="usdInput"></div>
-<div class="field"><label>EUR → UAH вручну</label><input inputmode="decimal" id="eurInput"></div>
+<div class="field"><label>Статичний USD → UAH</label><input inputmode="decimal" id="usdInput"></div>
+<div class="field"><label>Статичний EUR → UAH</label><input inputmode="decimal" id="eurInput"></div>
 </div>
 <button class="btn" style="margin-top:10px" id="saveCoreSettings">Зберегти</button>
 </div>
@@ -134,7 +146,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 <div class="modalTop"><h2 id="memberModalTitle">Учасник</h2><button class="modalClose" data-close="memberModal">×</button></div>
 <form id="memberForm">
 <div class="formGrid">
-<div class="field"><label>Імʼя</label><input id="memberName" required maxlength="80"></div>
+<div class="field"><label>Прізвище Імʼя</label><input id="memberName" required maxlength="80" placeholder="Наприклад, Більмак Ельвіна"></div>
 <div class="field"><label>Група</label><select id="memberGroup"></select></div>
 <div class="field full"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="memberExcluded" style="width:20px;height:20px;min-height:0"> Не включати до повідомлення про оплату</label></div>
 <div class="field full"><label>Примітка</label><input id="memberNote" maxlength="120"></div>
@@ -215,18 +227,70 @@ const hasMoney=m=>Object.values(m).some(v=>Math.abs(v)>.0001);
 const formatMoneySet=m=>['UAH','EUR','USD'].filter(c=>Math.abs(num(m[c]))>.0001).map(c=>amountText(m[c],c)).join(' + ')||'0 грн';
 const monthCmp=(a,b)=>String(a).localeCompare(String(b));
 const plusMonth=(s,n=1)=>{const a=s.split('-').map(Number),d=new Date(a[0],a[1]-1+n,1);return d.getFullYear()+'-'+pad(d.getMonth()+1)};
-const defaultState=()=>({cycle:currentMonth(),billingDay:15,rates:{USD:45.0005,EUR:51.7706,lastUpdated:null},services:JSON.parse(JSON.stringify(DEFAULT_SERVICES)),groups:[{id:'main',name:'Основна family',cardHolder:'',cardNumber:''}],members:[],archives:[]});
+const defaultState=()=>({
+  cycle:currentMonth(),
+  billingDay:15,
+  rates:{
+    dynamic:{USD:45.0005,EUR:51.7706,lastUpdated:null},
+    static:{USD:44.93,EUR:52.27}
+  },
+  services:JSON.parse(JSON.stringify(DEFAULT_SERVICES)),
+  groups:[
+    {id:'main',name:'Моя family',cardHolder:'',cardNumber:''},
+    {id:'netflix-dasha',name:'Netflix family Даші',cardHolder:'',cardNumber:''}
+  ],
+  members:[],
+  archives:[]
+});
 let state=defaultState(),editingMember=null,editingService=null,activeView='dashboard';
 
 function save(){localStorage.setItem(KEY,JSON.stringify(state))}
-function load(){try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.services&&v.members){state={...defaultState(),...v,rates:{...defaultState().rates,...(v.rates||{})}}}}catch(e){}}
+function load(){
+ try{
+   const v=JSON.parse(localStorage.getItem(KEY));
+   if(v&&v.services&&v.members){
+     const base=defaultState();
+     let rates;
+     if(v.rates&&v.rates.dynamic&&v.rates.static){
+       rates={
+         dynamic:{...base.rates.dynamic,...v.rates.dynamic},
+         static:{...base.rates.static,...v.rates.static}
+       };
+     }else{
+       const old=v.rates||{};
+       rates={
+         dynamic:{
+           USD:num(old.USD)||base.rates.dynamic.USD,
+           EUR:num(old.EUR)||base.rates.dynamic.EUR,
+           lastUpdated:old.lastUpdated||null
+         },
+         static:{...base.rates.static}
+       };
+     }
+     state={...base,...v,rates};
+     if((!state.members||state.members.length===0)&&(!state.archives||state.archives.length===0)&&state.groups&&state.groups.length===1){
+       const first=state.groups[0];
+       state.groups=[
+         {...first,id:first.id||'main',name:'Моя family'},
+         {id:'netflix-dasha',name:'Netflix family Даші',cardHolder:'',cardNumber:''}
+       ];
+     }
+   }
+ }catch(e){}
+}
 function toast(t){$('toast').textContent=t;$('toast').classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').classList.remove('show'),1800)}
 function openModal(id){$(id).classList.add('show')}
 function closeModal(id){$(id).classList.remove('show')}
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
 document.querySelectorAll('.modalBack').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}));
 
-function serviceTotalUAH(s){if(s.currency==='UAH')return num(s.amount);return num(s.amount)*num(state.rates[s.currency])}
+function effectiveRate(currency){
+ if(currency==='UAH')return 1;
+ const dynamic=num(state.rates&&state.rates.dynamic&&state.rates.dynamic[currency]);
+ const stat=num(state.rates&&state.rates.static&&state.rates.static[currency]);
+ return Math.max(dynamic,stat);
+}
+function serviceTotalUAH(s){if(s.currency==='UAH')return num(s.amount);return num(s.amount)*effectiveRate(s.currency)}
 function participants(serviceId){return state.members.filter(m=>m.assignments&&m.assignments[serviceId]&&m.assignments[serviceId].active!==false).length}
 function isPrepaid(a){return !!(a&&a.prepaidUntil&&monthCmp(a.prepaidUntil,state.cycle)>=0)}
 function serviceShare(member,service){
@@ -246,6 +310,7 @@ function memberServices(member){
  return state.services.filter(s=>member.assignments&&member.assignments[s.id]&&member.assignments[s.id].active!==false)
 }
 function debtMonthsText(n){if(!n)return'';const a=n%10,b=n%100,word=(a===1&&b!==11)?'місяць':(a>=2&&a<=4&&!(b>=12&&b<=14))?'місяці':'місяців';return'Борг за '+n+' '+word}
+function sortMembersByName(list){return [...list].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'uk',{sensitivity:'base'}))}
 function rollServiceDates(){
  const t=ymd(today());let changed=false;
  state.services.forEach(s=>{
@@ -273,7 +338,7 @@ function renderDashboard(){
  $('serviceCount').textContent=state.services.length;
  if(!state.members.length){$('paymentList').innerHTML='<div class="empty">Додайте учасників у розділі «Учасники».</div>';return}
  const groups=new Map(state.groups.map(g=>[g.id,g.name]));
- const ordered=[...state.members].sort((a,b)=>(groups.get(a.groupId)||'').localeCompare(groups.get(b.groupId)||'')||a.name.localeCompare(b.name));
+ const ordered=[...state.members].sort((a,b)=>(groups.get(a.groupId)||'').localeCompare(groups.get(b.groupId)||'','uk',{sensitivity:'base'})||String(a.name||'').localeCompare(String(b.name||''),'uk',{sensitivity:'base'}));
  let html='',lastGroup='';
  ordered.forEach(m=>{
    const g=groups.get(m.groupId)||'Без групи';
@@ -291,14 +356,19 @@ function renderDashboard(){
 }
 function renderMembers(){
  if(!state.members.length){$('memberList').innerHTML='<div class="empty">Учасників поки немає.</div>';return}
- $('memberList').innerHTML=state.members.map(m=>'<div class="memberRow"><div><div class="rowTitle">'+esc(m.name)+(m.paid?'<span class="badge">сплачено</span>':'')+'</div><div class="rowMeta">'+esc((state.groups.find(g=>g.id===m.groupId)||{}).name||'Без групи')+' · '+memberServices(m).length+' сервісів · '+esc(formatMoneySet(totalDue(m)))+(m.debtMonths?' · '+esc(debtMonthsText(m.debtMonths)):'')+'</div></div><div class="rowActions"><button class="btn secondary smallBtn" data-edit-member="'+esc(m.id)+'">Редагувати</button><button class="btn danger smallBtn" data-delete-member="'+esc(m.id)+'">×</button></div></div>').join('');
+ $('memberList').innerHTML=sortMembersByName(state.members).map(m=>'<div class="memberRow"><div><div class="rowTitle">'+esc(m.name)+(m.paid?'<span class="badge">сплачено</span>':'')+'</div><div class="rowMeta">'+esc((state.groups.find(g=>g.id===m.groupId)||{}).name||'Без групи')+' · '+memberServices(m).length+' сервісів · '+esc(formatMoneySet(totalDue(m)))+(m.debtMonths?' · '+esc(debtMonthsText(m.debtMonths)):'')+'</div></div><div class="rowActions"><button class="btn secondary smallBtn" data-edit-member="'+esc(m.id)+'">Редагувати</button><button class="btn danger smallBtn" data-delete-member="'+esc(m.id)+'">×</button></div></div>').join('');
  document.querySelectorAll('[data-edit-member]').forEach(x=>x.addEventListener('click',()=>openMember(x.dataset.editMember)));
  document.querySelectorAll('[data-delete-member]').forEach(x=>x.addEventListener('click',()=>{const m=state.members.find(v=>v.id===x.dataset.deleteMember);if(m&&confirm('Видалити '+m.name+'?')){state.members=state.members.filter(v=>v.id!==m.id);save();render();toast('Учасника видалено')}}));
 }
 function renderServices(){
- $('usdRate').textContent=fmt(state.rates.USD)+' ₴';
- $('eurRate').textContent=fmt(state.rates.EUR)+' ₴';
- $('ratesUpdated').textContent=state.rates.lastUpdated?'Оновлено: '+new Intl.DateTimeFormat('uk-UA',{dateStyle:'short',timeStyle:'short'}).format(new Date(state.rates.lastUpdated)):'Курс можна оновити автоматично або задати вручну.';
+ const usdEff=effectiveRate('USD'),eurEff=effectiveRate('EUR');
+ $('usdDynamic').textContent=fmt(state.rates.dynamic.USD)+' ₴';
+ $('eurDynamic').textContent=fmt(state.rates.dynamic.EUR)+' ₴';
+ $('usdStatic').textContent=fmt(state.rates.static.USD)+' ₴';
+ $('eurStatic').textContent=fmt(state.rates.static.EUR)+' ₴';
+ $('usdRate').textContent=fmt(usdEff)+' ₴';
+ $('eurRate').textContent=fmt(eurEff)+' ₴';
+ $('ratesUpdated').textContent=state.rates.dynamic.lastUpdated?'Динамічний курс Monobank оновлено: '+new Intl.DateTimeFormat('uk-UA',{dateStyle:'short',timeStyle:'short'}).format(new Date(state.rates.dynamic.lastUpdated))+'. Для розрахунку автоматично використовується більший із динамічного та статичного курсів.':'Для розрахунку автоматично використовується більший із динамічного та статичного курсів.';
  if(!state.services.length){$('serviceList').innerHTML='<div class="empty">Сервісів немає.</div>';return}
  $('serviceList').innerHTML=state.services.map(s=>{
    const p=participants(s.id),total=serviceTotalUAH(s);
@@ -316,7 +386,7 @@ function renderArchive(){
  document.querySelectorAll('[data-copy-archive]').forEach(b=>b.addEventListener('click',async()=>{const [rev,i]=b.dataset.copyArchive.split('-').map(Number),a=[...state.archives].reverse()[rev],m=a.messages[i];try{await navigator.clipboard.writeText(m.text);toast('Скопійовано')}catch(e){}}));
 }
 function renderSettings(){
- $('cycleInput').value=state.cycle;$('billingDay').value=state.billingDay;$('usdInput').value=state.rates.USD;$('eurInput').value=state.rates.EUR;
+ $('cycleInput').value=state.cycle;$('billingDay').value=state.billingDay;$('usdInput').value=state.rates.static.USD;$('eurInput').value=state.rates.static.EUR;
  $('groupSettings').innerHTML=state.groups.map((g,i)=>'<div class="settingsGroup"><div class="formGrid"><div class="field"><label>Назва групи</label><input data-group-name="'+i+'" value="'+esc(g.name)+'"></div><div class="field"><label>Імʼя власника картки</label><input data-group-holder="'+i+'" value="'+esc(g.cardHolder||'')+'"></div><div class="field full"><label>Номер картки</label><input inputmode="numeric" data-group-card="'+i+'" value="'+esc(g.cardNumber||'')+'" placeholder="Зберігається тільки на цьому пристрої"></div></div><button class="btn danger smallBtn" data-delete-group="'+i+'" style="margin-top:8px" '+(state.groups.length===1?'disabled':'')+'>Видалити групу</button></div>').join('');
  document.querySelectorAll('[data-delete-group]').forEach(b=>b.addEventListener('click',()=>{const i=Number(b.dataset.deleteGroup),g=state.groups[i];if(confirm('Видалити групу «'+g.name+'»?')){const fallback=state.groups.find((_,x)=>x!==i);state.members.forEach(m=>{if(m.groupId===g.id)m.groupId=fallback.id});state.groups.splice(i,1);save();renderSettings();toast('Групу видалено')}}));
 }
@@ -361,28 +431,69 @@ $('serviceForm').addEventListener('submit',e=>{
 });
 $('deleteServiceBtn').addEventListener('click',()=>{if(!editingService)return;const s=state.services.find(x=>x.id===editingService);if(confirm('Видалити сервіс «'+s.name+'»?')){state.services=state.services.filter(x=>x.id!==editingService);state.members.forEach(m=>{if(m.assignments)delete m.assignments[editingService]});save();closeModal('serviceModal');render();toast('Сервіс видалено')}});
 
-function generateMessages(){
- return state.groups.map(g=>{
-   const lines=[];
-   state.members.filter(m=>m.groupId===g.id&&!m.excluded).forEach(m=>{
-     const prepaid=[],current=[],used=[];
-     memberServices(m).forEach(s=>{const a=m.assignments[s.id];used.push(s);if(isPrepaid(a))prepaid.push(s.name+' (сплачено по '+shortMonth(a.prepaidUntil)+')');else current.push(s.name)});
-     const parts=[...prepaid];
-     if(current.length){let t=current.join(', ');const due=totalDue(m);if(hasMoney(due))t+=' - '+formatMoneySet(due);parts.push(t)}
-     else if(hasMoney(totalDue(m)))parts.push(formatMoneySet(totalDue(m)));
-     if(!parts.length)return;
-     let line=m.name+' - '+parts.join(', ');
-     if(used.some(s=>s.priceChanged))line+=' ‼️';
-     lines.push(line);
+function buildGroupLines(group){
+ const lines=[];
+ sortMembersByName(state.members.filter(m=>m.groupId===group.id&&!m.excluded)).forEach(m=>{
+   const prepaid=[],current=[],used=[];
+   memberServices(m).forEach(s=>{
+     const a=m.assignments[s.id];used.push(s);
+     if(isPrepaid(a))prepaid.push(s.name+' (сплачено по '+shortMonth(a.prepaidUntil)+')');
+     else current.push(s.name);
    });
-   let text='Мої вітання 👋🏻\n'+pad(state.billingDay)+'.'+shortMonth(state.cycle)+' час оновлення підписок.\n\nБудь ласка, будьте уважні при оплаті та перевіряйте реквізити 🫶🏻\nНе забувайте надсилати «➕» чи «✅» після оплати.\n\n❗ Оплати приймаються максимум на 3 місяці ❗\n\n❗ Якщо плануєте скасувати підписку, будь ласка, повідомте про це за місяць. ❗\n\n'+g.name+(g.cardHolder?' (картка на імʼя - '+g.cardHolder+')':'')+':\n\n'+lines.join('\n');
-   if(g.cardNumber)text+='\n\n'+g.cardNumber;
-   return{groupId:g.id,groupName:g.name,text};
+   const parts=[...prepaid];
+   if(current.length){
+     let t=current.join(', ');
+     const due=totalDue(m);
+     if(hasMoney(due))t+=' - '+formatMoneySet(due);
+     parts.push(t);
+   }else if(hasMoney(totalDue(m))){
+     parts.push(formatMoneySet(totalDue(m)));
+   }
+   if(!parts.length)return;
+   let line=m.name+' - '+parts.join(', ');
+   if(used.some(s=>s.priceChanged))line+=' ‼️';
+   lines.push(line);
  });
+ return lines;
+}
+function generateMessages(){
+ const g1=state.groups[0]||{name:'Моя family',cardHolder:'',cardNumber:'',id:''};
+ const g2=state.groups[1]||{name:'Netflix family Даші',cardHolder:'',cardNumber:'',id:''};
+ const lines1=buildGroupLines(g1);
+ const lines2=buildGroupLines(g2);
+ const intro=
+   'Мої вітання 👋🏻\n'+
+   pad(state.billingDay)+'.'+shortMonth(state.cycle)+' час оновлення підписок.\n'+
+   'Будь ласка, будьте уважні коли робите платіж, перевіряйте номер потрібної вам картки 🫶🏻\n'+
+   'Не забувайте надсилати «➕» чи «✅» при оплаті підписки (це стосується тих хто відправляє кошти на карту Артема)\n\n'+
+   '❗ Оплати приймаються максимум на 3 місяці ❗\n\n'+
+   '❗ Якщо плануєте скасувати підписку, будь ласка, напишіть мені про це за місяць. Інакше доведеться оплатити ще один місяць користування.❗\n\n'+
+   'Дякую за вашу увагу та гарного вам місяця ✨\n\n';
+ const firstText=intro+
+   g1.name+(g1.cardHolder?' (картка на імʼя - '+g1.cardHolder+')':'')+':\n\n'+
+   lines1.join('\n');
+ const thirdText=
+   g2.name+(g2.cardHolder?' (картка на імʼя - '+g2.cardHolder+')':'')+':\n\n'+
+   lines2.join('\n');
+ return[
+   {title:'Повідомлення 1/4 — основний текст',text:firstText},
+   {title:'Повідомлення 2/4 — картка '+g1.name,text:g1.cardNumber||'Номер картки не вказано'},
+   {title:'Повідомлення 3/4 — '+g2.name,text:thirdText},
+   {title:'Повідомлення 4/4 — картка '+g2.name,text:g2.cardNumber||'Номер картки не вказано'}
+ ];
 }
 function showMessages(){
- const msgs=generateMessages();$('messagesBody').innerHTML=msgs.map((m,i)=>'<div style="font-weight:760;margin-top:'+(i?'18':'0')+'px">'+esc(m.groupName)+'</div><div class="messageBox">'+esc(m.text)+'</div><button class="btn secondary smallBtn" data-copy-msg="'+i+'" style="margin-top:6px">Копіювати</button>').join('');
- document.querySelectorAll('[data-copy-msg]').forEach(b=>b.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(msgs[Number(b.dataset.copyMsg)].text);toast('Скопійовано')}catch(e){toast('Не вдалося скопіювати')}}));openModal('messagesModal');
+ const msgs=generateMessages();
+ $('messagesBody').innerHTML=msgs.map((m,i)=>
+   '<div style="font-weight:760;margin-top:'+(i?'18':'0')+'px">'+esc(m.title)+'</div>'+
+   '<div class="messageBox">'+esc(m.text)+'</div>'+
+   '<button class="btn secondary smallBtn" data-copy-msg="'+i+'" style="margin-top:6px">Копіювати повідомлення '+(i+1)+'</button>'
+ ).join('');
+ document.querySelectorAll('[data-copy-msg]').forEach(b=>b.addEventListener('click',async()=>{
+   try{await navigator.clipboard.writeText(msgs[Number(b.dataset.copyMsg)].text);toast('Повідомлення скопійовано')}
+   catch(e){toast('Не вдалося скопіювати')}
+ }));
+ openModal('messagesModal');
 }
 $('copyMessagesBtn').addEventListener('click',showMessages);
 
@@ -400,7 +511,13 @@ $('confirmCloseMonth').addEventListener('click',()=>{
  state.cycle=plusMonth(state.cycle,1);save();closeModal('closeModal');render();toast('Місяць закрито');
 });
 
-$('saveCoreSettings').addEventListener('click',()=>{state.cycle=$('cycleInput').value||state.cycle;state.billingDay=Math.min(28,Math.max(1,Number($('billingDay').value)||15));state.rates.USD=num($('usdInput').value)||state.rates.USD;state.rates.EUR=num($('eurInput').value)||state.rates.EUR;save();render();toast('Налаштування збережено')});
+$('saveCoreSettings').addEventListener('click',()=>{
+ state.cycle=$('cycleInput').value||state.cycle;
+ state.billingDay=Math.min(28,Math.max(1,Number($('billingDay').value)||15));
+ state.rates.static.USD=num($('usdInput').value)||state.rates.static.USD;
+ state.rates.static.EUR=num($('eurInput').value)||state.rates.static.EUR;
+ save();render();toast('Налаштування збережено');
+});
 $('addGroupBtn').addEventListener('click',()=>{state.groups.push({id:uid(),name:'Нова група',cardHolder:'',cardNumber:''});save();renderSettings()});
 $('groupSettings').addEventListener('change',e=>{const attrs=['groupName','groupHolder','groupCard'];let key=attrs.find(k=>e.target.dataset[k]!==undefined);if(!key)return;const i=Number(e.target.dataset[key]),g=state.groups[i];if(key==='groupName')g.name=e.target.value.trim()||g.name;if(key==='groupHolder')g.cardHolder=e.target.value.trim();if(key==='groupCard')g.cardNumber=e.target.value.trim();save();renderDashboard()});
 
@@ -409,19 +526,39 @@ async function refreshRates(show=true){
   const res=await fetch('https://api.monobank.ua/bank/currency',{cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);
   const data=await res.json(),usd=data.find(x=>x.currencyCodeA===840&&x.currencyCodeB===980),eur=data.find(x=>x.currencyCodeA===978&&x.currencyCodeB===980);
   if(!usd||!eur)throw new Error('rate');
-  state.rates.USD=num(usd.rateSell||usd.rateCross);state.rates.EUR=num(eur.rateSell||eur.rateCross);state.rates.lastUpdated=new Date().toISOString();save();renderServices();renderSettings();if(show)toast('Курси оновлено');
+  state.rates.dynamic.USD=num(usd.rateSell||usd.rateCross);
+  state.rates.dynamic.EUR=num(eur.rateSell||eur.rateCross);
+  state.rates.dynamic.lastUpdated=new Date().toISOString();
+  save();renderServices();renderSettings();if(show)toast('Динамічний курс Monobank оновлено');
  }catch(e){if(show)toast('Не вдалося оновити курс. Можна ввести вручну.')}
 }
 $('refreshRatesBtn').addEventListener('click',()=>refreshRates(true));
-function maybeRefreshRates(){if(!state.rates.lastUpdated||Date.now()-new Date(state.rates.lastUpdated).getTime()>6*3600000)refreshRates(false)}
+function maybeRefreshRates(){if(!state.rates.dynamic.lastUpdated||Date.now()-new Date(state.rates.dynamic.lastUpdated).getTime()>6*3600000)refreshRates(false)}
 
 $('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='payment-confirm-'+state.cycle+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),400)});
 $('importBtn').addEventListener('click',()=>$('importFile').click());
-$('importFile').addEventListener('change',async()=>{const f=$('importFile').files[0];if(!f)return;try{const v=JSON.parse(await f.text());if(!v||!Array.isArray(v.services)||!Array.isArray(v.members))throw new Error();state={...defaultState(),...v};save();render();toast('Дані імпортовано')}catch(e){toast('Файл не підходить')}$('importFile').value=''});
+$('importFile').addEventListener('change',async()=>{
+ const f=$('importFile').files[0];if(!f)return;
+ try{
+   const v=JSON.parse(await f.text());
+   if(!v||!Array.isArray(v.services)||!Array.isArray(v.members))throw new Error();
+   const base=defaultState();
+   let rates;
+   if(v.rates&&v.rates.dynamic&&v.rates.static){
+     rates={dynamic:{...base.rates.dynamic,...v.rates.dynamic},static:{...base.rates.static,...v.rates.static}};
+   }else{
+     const old=v.rates||{};
+     rates={dynamic:{USD:num(old.USD)||base.rates.dynamic.USD,EUR:num(old.EUR)||base.rates.dynamic.EUR,lastUpdated:old.lastUpdated||null},static:{...base.rates.static}};
+   }
+   state={...base,...v,rates};
+   save();render();toast('Дані імпортовано');
+ }catch(e){toast('Файл не підходить')}
+ $('importFile').value='';
+});
 $('resetBtn').addEventListener('click',()=>{if(confirm('Повністю очистити всі дані цього застосунку?')){state=defaultState();save();render();toast('Дані очищено')}});
 
 load();rollServiceDates();render();maybeRefreshRates();
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=2').catch(()=>{}));
 })();
 </script>
 </body>
