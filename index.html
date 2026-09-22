@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f7f5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Оплати">
+<meta name="description" content="Облік підписок, оплат і боргів">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>Контроль оплат</title>
+<style>
+:root{--bg:#f6f7f5;--card:#fff;--text:#14251e;--muted:#6b7671;--line:#dfe4e1;--soft:#f1f4f2;--green:#245d49;--green2:#2f745b;--greenSoft:#e9f3ee;--red:#b42318;--redSoft:#fff0ee;--amber:#9a6700;--amberSoft:#fff7dc;--blue:#175cd3;--shadow:0 8px 24px rgba(20,37,30,.06)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}button,input,select,textarea{font:inherit}button{cursor:pointer}
+.app{max-width:1100px;margin:0 auto;padding:18px 14px 90px}.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:3px 0 14px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:750}h1{font-size:26px;letter-spacing:-.03em;margin:4px 0 0}
+.small{font-size:12px;color:var(--muted)}.nav{display:flex;gap:7px;overflow:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
+.nav button{border:1px solid var(--line);background:#fff;color:var(--text);padding:9px 13px;border-radius:999px;white-space:nowrap;font-weight:700}.nav button.active{background:var(--green);color:#fff;border-color:var(--green)}
+.view{display:none}.view.active{display:block}.grid{display:grid;gap:12px}.summary{grid-template-columns:repeat(4,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:19px;padding:17px;box-shadow:var(--shadow)}.cardTitle{font-size:12px;color:var(--muted);margin-bottom:5px}
+.metric{font-size:28px;font-weight:820;letter-spacing:-.035em}.metricSmall{font-size:20px;font-weight:780}.section{margin-top:12px}.sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.sectionHead h2{font-size:18px;margin:0}
+.btn{border:0;border-radius:12px;min-height:43px;padding:9px 14px;background:var(--green);color:#fff;font-weight:750}.btn.secondary{background:var(--soft);color:var(--text);border:1px solid var(--line)}.btn.danger{background:#fff;color:var(--red);border:1px solid #efc8c4}.btn.smallBtn{min-height:36px;padding:7px 10px;font-size:12px}.btn:disabled{opacity:.45;cursor:default}
+.field{display:grid;gap:5px}.field label{font-size:12px;color:var(--muted)}input,select,textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:12px;padding:9px 11px;background:#fff;color:var(--text);outline:none;font-size:16px}textarea{min-height:95px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 0 0 3px rgba(47,116,91,.1)}
+.payList{display:grid;gap:9px}.payRow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.payCheck{width:25px;height:25px;accent-color:var(--green)}.personName{font-weight:780}.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}.chip{font-size:11px;padding:4px 7px;border-radius:999px;background:var(--soft);color:var(--muted)}.chip.prepaid{background:var(--greenSoft);color:var(--green)}.chip.debt{background:var(--amberSoft);color:var(--amber)}
+.amounts{text-align:right;font-weight:780;white-space:nowrap}.amounts div+div{margin-top:2px}.iconBtn{width:38px;height:38px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--muted)}
+.serviceRow,.memberRow,.archiveRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}.serviceRow:last-child,.memberRow:last-child,.archiveRow:last-child{border-bottom:0}
+.rowTitle{font-weight:760}.rowMeta{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45}.rowActions{display:flex;gap:7px;align-items:center}.badge{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;background:var(--soft);font-size:11px;color:var(--muted);margin-left:5px}.badge.changed{background:var(--amberSoft);color:var(--amber)}
+.rateGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rateBox{padding:13px;border:1px solid var(--line);border-radius:14px;background:var(--soft)}.rateValue{font-size:22px;font-weight:780;margin-top:3px}
+.modalBack{position:fixed;inset:0;background:rgba(8,19,14,.43);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}.modalBack.show{display:flex}.modal{width:min(620px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:20px;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.24)}.modalTop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.modalTop h2{font-size:20px;margin:0}.modalClose{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:#fff;font-size:22px;color:var(--muted)}
+.formGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}.modalActions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+.assignments{display:grid;gap:8px;margin-top:8px}.assignRow{border:1px solid var(--line);border-radius:13px;padding:10px}.assignTop{display:flex;align-items:center;gap:9px}.assignTop input{width:21px;height:21px;min-height:0;accent-color:var(--green)}.assignName{font-weight:720}.assignOpts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:9px}.assignOpts.hidden{display:none}
+.notice{padding:10px 12px;border-radius:12px;background:var(--greenSoft);color:var(--green);font-size:12px;line-height:1.45}.warning{background:var(--amberSoft);color:var(--amber)}
+.messageBox{white-space:pre-wrap;background:var(--soft);border:1px solid var(--line);border-radius:13px;padding:12px;font-size:13px;line-height:1.5;margin-top:8px}.archiveDetails{margin-top:9px}.archiveDetails summary{cursor:pointer;font-weight:720}
+.empty{color:var(--muted);padding:12px 0;font-size:13px}.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translate(-50%,12px);opacity:0;pointer-events:none;background:#17261f;color:#fff;padding:10px 13px;border-radius:12px;z-index:40;font-size:13px;transition:.2s}.toast.show{opacity:1;transform:translate(-50%,0)}
+.closeMonthBar{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(1072px,calc(100% - 24px));display:none;z-index:8}.closeMonthBar.show{display:block}.closeMonthBar button{width:100%;box-shadow:0 10px 30px rgba(20,37,30,.2)}
+.settingsGroup{padding:12px;border:1px solid var(--line);border-radius:13px;margin-top:9px}.settingsGroup .formGrid{margin-top:9px}
+@media(max-width:760px){.summary{grid-template-columns:1fr 1fr}.g2,.formGrid,.assignOpts,.rateGrid{grid-template-columns:1fr}.payRow{grid-template-columns:auto minmax(0,1fr) auto}.payRow .iconBtn{grid-column:3}.amounts{grid-column:2/4;text-align:left}.app{padding-left:12px;padding-right:12px}.card{padding:15px}}
+</style>
+</head>
+<body>
+<main class="app">
+<div class="hero"><div><div class="eyebrow">Підписки та оплати</div><h1>Контроль оплат</h1></div><div class="small" id="today"></div></div>
+<div class="nav">
+<button class="active" data-view="dashboard">Оплати</button>
+<button data-view="members">Учасники</button>
+<button data-view="services">Сервіси</button>
+<button data-view="archive">Архів</button>
+<button data-view="settings">Налаштування</button>
+</div>
+
+<section class="view active" id="view-dashboard">
+<div class="grid summary">
+<div class="card"><div class="cardTitle">Поточний період</div><div class="metricSmall" id="cycleLabel"></div></div>
+<div class="card"><div class="cardTitle">Сплатили</div><div class="metric" id="paidCount">0/0</div></div>
+<div class="card"><div class="cardTitle">З боргом</div><div class="metric" id="debtCount">0</div></div>
+<div class="card"><div class="cardTitle">Активні сервіси</div><div class="metric" id="serviceCount">0</div></div>
+</div>
+<div class="card section">
+<div class="sectionHead"><h2>Стан оплат</h2><button class="btn secondary smallBtn" id="copyMessagesBtn">Сформувати повідомлення</button></div>
+<div id="paymentList" class="payList"></div>
+</div>
+</section>
+
+<section class="view" id="view-members">
+<div class="card">
+<div class="sectionHead"><h2>Учасники</h2><button class="btn" id="addMemberBtn">+ Додати</button></div>
+<div id="memberList"></div>
+</div>
+</section>
+
+<section class="view" id="view-services">
+<div class="grid g2">
+<div class="card">
+<div class="sectionHead"><h2>Сервіси</h2><button class="btn" id="addServiceBtn">+ Додати</button></div>
+<div id="serviceList"></div>
+</div>
+<div class="card">
+<div class="sectionHead"><h2>Курси</h2><button class="btn secondary smallBtn" id="refreshRatesBtn">Оновити Monobank</button></div>
+<div class="rateGrid">
+<div class="rateBox"><div class="small">USD → UAH</div><div class="rateValue" id="usdRate"></div></div>
+<div class="rateBox"><div class="small">EUR → UAH</div><div class="rateValue" id="eurRate"></div></div>
+</div>
+<div class="small" style="margin-top:9px" id="ratesUpdated"></div>
+</div>
+</div>
+</section>
+
+<section class="view" id="view-archive">
+<div class="card">
+<div class="sectionHead"><h2>Архів місяців</h2><button class="btn secondary smallBtn" id="exportBtn">Експорт даних</button></div>
+<div id="archiveList"></div>
+</div>
+</section>
+
+<section class="view" id="view-settings">
+<div class="grid g2">
+<div class="card">
+<h2 style="font-size:18px;margin:0 0 12px">Період та курси</h2>
+<div class="formGrid">
+<div class="field"><label>Поточний місяць</label><input type="month" id="cycleInput"></div>
+<div class="field"><label>День оновлення підписок</label><input type="number" min="1" max="28" id="billingDay"></div>
+<div class="field"><label>USD → UAH вручну</label><input inputmode="decimal" id="usdInput"></div>
+<div class="field"><label>EUR → UAH вручну</label><input inputmode="decimal" id="eurInput"></div>
+</div>
+<button class="btn" style="margin-top:10px" id="saveCoreSettings">Зберегти</button>
+</div>
+<div class="card">
+<h2 style="font-size:18px;margin:0 0 12px">Групи та картки</h2>
+<div class="notice warning">Номери карток зберігаються тільки у localStorage цього браузера і не записуються в GitHub.</div>
+<div id="groupSettings"></div>
+<button class="btn secondary" style="margin-top:10px" id="addGroupBtn">+ Додати групу</button>
+</div>
+</div>
+<div class="card section">
+<h2 style="font-size:18px;margin:0 0 12px">Резервна копія</h2>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn secondary" id="importBtn">Імпорт JSON</button>
+<button class="btn danger" id="resetBtn">Очистити всі дані</button>
+<input type="file" id="importFile" accept="application/json" hidden>
+</div>
+</div>
+</section>
+</main>
+
+<div class="closeMonthBar show" id="closeMonthBar"><button class="btn" id="closeMonthBtn">Закрити місяць</button></div>
+
+<div class="modalBack" id="memberModal">
+<div class="modal">
+<div class="modalTop"><h2 id="memberModalTitle">Учасник</h2><button class="modalClose" data-close="memberModal">×</button></div>
+<form id="memberForm">
+<div class="formGrid">
+<div class="field"><label>Імʼя</label><input id="memberName" required maxlength="80"></div>
+<div class="field"><label>Група</label><select id="memberGroup"></select></div>
+<div class="field full"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="memberExcluded" style="width:20px;height:20px;min-height:0"> Не включати до повідомлення про оплату</label></div>
+<div class="field full"><label>Примітка</label><input id="memberNote" maxlength="120"></div>
+</div>
+<div style="font-weight:760;margin-top:15px">Підписки</div>
+<div class="assignments" id="assignmentList"></div>
+<div class="modalActions"><button type="button" class="btn secondary" data-close="memberModal">Скасувати</button><button class="btn" type="submit">Зберегти</button></div>
+</form>
+</div>
+</div>
+
+<div class="modalBack" id="serviceModal">
+<div class="modal">
+<div class="modalTop"><h2 id="serviceModalTitle">Сервіс</h2><button class="modalClose" data-close="serviceModal">×</button></div>
+<form id="serviceForm">
+<div class="formGrid">
+<div class="field full"><label>Назва</label><input id="serviceName" required maxlength="60"></div>
+<div class="field"><label>Вартість</label><input id="serviceAmount" inputmode="decimal" required></div>
+<div class="field"><label>Валюта</label><select id="serviceCurrency"><option>UAH</option><option>USD</option><option>EUR</option></select></div>
+<div class="field"><label>Дата наступного списання</label><input id="serviceDate" type="date"></div>
+<div class="field"><label>Періодичність</label><select id="serviceInterval"><option value="1">Щомісяця</option><option value="12">Щороку</option></select></div>
+<div class="field"><label>Кількість місць</label><input id="serviceCapacity" type="number" min="1" max="99"></div>
+</div>
+<div class="modalActions"><button type="button" class="btn danger" id="deleteServiceBtn">Видалити</button><button type="button" class="btn secondary" data-close="serviceModal">Скасувати</button><button class="btn" type="submit">Зберегти</button></div>
+</form>
+</div>
+</div>
+
+<div class="modalBack" id="messagesModal">
+<div class="modal">
+<div class="modalTop"><h2>Повідомлення</h2><button class="modalClose" data-close="messagesModal">×</button></div>
+<div id="messagesBody"></div>
+</div>
+</div>
+
+<div class="modalBack" id="closeModal">
+<div class="modal">
+<div class="modalTop"><h2>Закрити місяць?</h2><button class="modalClose" data-close="closeModal">×</button></div>
+<p class="small" style="font-size:14px;line-height:1.5">Буде створено архів поточного періоду. Для тих, хто не відмічений як «сплачено», поточна сума додасться до боргу. Після цього статуси оплат обнуляться, а період перейде на наступний місяць.</p>
+<div class="modalActions"><button class="btn secondary" data-close="closeModal">Скасувати</button><button class="btn" id="confirmCloseMonth">Підтвердити</button></div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const KEY='payment-confirm-v1';
+const DEFAULT_SERVICES=[
+{id:'apple-one',name:'Apple One',amount:13.95,currency:'USD',nextDate:'2026-10-16',interval:1,capacity:6,priceChanged:false},
+{id:'netflix-uhd',name:'Netflix Ultra HD',amount:9.99,currency:'EUR',nextDate:'2026-10-21',interval:1,capacity:3,priceChanged:false},
+{id:'spotify',name:'Spotify Premium',amount:7.99,currency:'USD',nextDate:'2026-10-16',interval:1,capacity:6,priceChanged:false},
+{id:'youtube',name:'YouTube Premium',amount:8.49,currency:'USD',nextDate:'2026-10-21',interval:1,capacity:6,priceChanged:false},
+{id:'icloud',name:'iCloud+',amount:9.99,currency:'USD',nextDate:'2026-10-06',interval:1,capacity:2,priceChanged:false},
+{id:'sweet-tv',name:'Sweet TV',amount:400,currency:'UAH',nextDate:'2026-10-19',interval:1,capacity:2,priceChanged:false},
+{id:'chatgpt-plus',name:'ChatGPT Plus',amount:24,currency:'USD',nextDate:'2026-10-05',interval:1,capacity:1,priceChanged:false},
+{id:'google-one',name:'Google One',amount:191.58,currency:'UAH',nextDate:'2027-04-15',interval:12,capacity:2,priceChanged:false},
+{id:'mondly',name:'Mondly',amount:39.99,currency:'UAH',nextDate:'2026-11-16',interval:12,capacity:6,priceChanged:false},
+{id:'telegram',name:'Telegram',amount:2.50,currency:'USD',nextDate:'2027-03-19',interval:12,capacity:1,priceChanged:false}
+];
+const $=id=>document.getElementById(id);
+const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random();
+const num=v=>{const n=parseFloat(String(v??'').replace(/\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0};
+const pad=n=>String(n).padStart(2,'0');
+const today=()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate())};
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const currentMonth=()=>{const d=today();return d.getFullYear()+'-'+pad(d.getMonth()+1)};
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const monthLabel=s=>{const a=String(s).split('-').map(Number);if(!a[0]||!a[1])return s;return new Intl.DateTimeFormat('uk-UA',{month:'long',year:'numeric'}).format(new Date(a[0],a[1]-1,1))};
+const shortMonth=s=>{const a=String(s).split('-');return a.length===2?a[1]+'.'+a[0]:s};
+const formatDate=s=>{if(!s)return'—';const a=s.split('-').map(Number);return new Intl.DateTimeFormat('uk-UA',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(a[0],a[1]-1,a[2]))};
+const fmt=n=>new Intl.NumberFormat('uk-UA',{maximumFractionDigits:4}).format(n);
+const round5=n=>Math.round(n/5)*5;
+const amountText=(n,c)=>{n=num(n);if(c==='UAH')return new Intl.NumberFormat('uk-UA',{maximumFractionDigits:0}).format(n)+' грн';if(c==='EUR')return '€'+new Intl.NumberFormat('uk-UA',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);return '$'+new Intl.NumberFormat('uk-UA',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)};
+const emptyMoney=()=>({UAH:0,USD:0,EUR:0});
+const addMoney=(a,b)=>{const r={...a};Object.keys(r).forEach(k=>r[k]+=num(b[k]));return r};
+const hasMoney=m=>Object.values(m).some(v=>Math.abs(v)>.0001);
+const formatMoneySet=m=>['UAH','EUR','USD'].filter(c=>Math.abs(num(m[c]))>.0001).map(c=>amountText(m[c],c)).join(' + ')||'0 грн';
+const monthCmp=(a,b)=>String(a).localeCompare(String(b));
+const plusMonth=(s,n=1)=>{const a=s.split('-').map(Number),d=new Date(a[0],a[1]-1+n,1);return d.getFullYear()+'-'+pad(d.getMonth()+1)};
+const defaultState=()=>({cycle:currentMonth(),billingDay:15,rates:{USD:45.0005,EUR:51.7706,lastUpdated:null},services:JSON.parse(JSON.stringify(DEFAULT_SERVICES)),groups:[{id:'main',name:'Основна family',cardHolder:'',cardNumber:''}],members:[],archives:[]});
+let state=defaultState(),editingMember=null,editingService=null,activeView='dashboard';
+
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.services&&v.members){state={...defaultState(),...v,rates:{...defaultState().rates,...(v.rates||{})}}}}catch(e){}}
+function toast(t){$('toast').textContent=t;$('toast').classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').classList.remove('show'),1800)}
+function openModal(id){$(id).classList.add('show')}
+function closeModal(id){$(id).classList.remove('show')}
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
+document.querySelectorAll('.modalBack').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}));
+
+function serviceTotalUAH(s){if(s.currency==='UAH')return num(s.amount);return num(s.amount)*num(state.rates[s.currency])}
+function participants(serviceId){return state.members.filter(m=>m.assignments&&m.assignments[serviceId]&&m.assignments[serviceId].active!==false).length}
+function isPrepaid(a){return !!(a&&a.prepaidUntil&&monthCmp(a.prepaidUntil,state.cycle)>=0)}
+function serviceShare(member,service){
+ const a=member.assignments&&member.assignments[service.id];if(!a||a.active===false||isPrepaid(a))return null;
+ const count=Math.max(1,participants(service.id));
+ if(a.mode==='CUSTOM')return{currency:a.customCurrency||'UAH',amount:num(a.customAmount)};
+ if(a.mode==='SERVICE')return{currency:service.currency,amount:service.currency==='UAH'?round5(num(service.amount)/count):Math.round(num(service.amount)/count*100)/100};
+ return{currency:'UAH',amount:round5(serviceTotalUAH(service)/count)};
+}
+function currentDue(member){
+ let m=emptyMoney();
+ state.services.forEach(s=>{const sh=serviceShare(member,s);if(sh)m[sh.currency]+=sh.amount});
+ return m;
+}
+function totalDue(member){return addMoney(currentDue(member),member.debt||emptyMoney())}
+function memberServices(member){
+ return state.services.filter(s=>member.assignments&&member.assignments[s.id]&&member.assignments[s.id].active!==false)
+}
+function debtMonthsText(n){if(!n)return'';const a=n%10,b=n%100,word=(a===1&&b!==11)?'місяць':(a>=2&&a<=4&&!(b>=12&&b<=14))?'місяці':'місяців';return'Борг за '+n+' '+word}
+function rollServiceDates(){
+ const t=ymd(today());let changed=false;
+ state.services.forEach(s=>{
+   if(!s.nextDate||!s.interval)return;
+   while(s.nextDate<t){
+     const a=s.nextDate.split('-').map(Number),d=new Date(a[0],a[1]-1+Number(s.interval),a[2]);
+     const next=ymd(d);if(next===s.nextDate)break;s.nextDate=next;changed=true;
+   }
+ });
+ if(changed)save();
+}
+
+function renderNav(){
+ document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===activeView));
+ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+ $('view-'+activeView).classList.add('active');
+ $('closeMonthBar').classList.toggle('show',activeView==='dashboard');
+}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{activeView=b.dataset.view;renderNav();render()}));
+
+function renderDashboard(){
+ $('cycleLabel').textContent=monthLabel(state.cycle);
+ $('paidCount').textContent=state.members.filter(m=>m.paid).length+'/'+state.members.length;
+ $('debtCount').textContent=state.members.filter(m=>m.debtMonths>0).length;
+ $('serviceCount').textContent=state.services.length;
+ if(!state.members.length){$('paymentList').innerHTML='<div class="empty">Додайте учасників у розділі «Учасники».</div>';return}
+ const groups=new Map(state.groups.map(g=>[g.id,g.name]));
+ const ordered=[...state.members].sort((a,b)=>(groups.get(a.groupId)||'').localeCompare(groups.get(b.groupId)||'')||a.name.localeCompare(b.name));
+ let html='',lastGroup='';
+ ordered.forEach(m=>{
+   const g=groups.get(m.groupId)||'Без групи';
+   if(g!==lastGroup){html+='<div class="small" style="font-weight:780;margin-top:8px">'+esc(g)+'</div>';lastGroup=g}
+   const chips=memberServices(m).map(s=>{
+      const a=m.assignments[s.id],pre=isPrepaid(a);
+      return'<span class="chip '+(pre?'prepaid':'')+'">'+esc(s.name)+(pre?' · сплачено по '+esc(shortMonth(a.prepaidUntil)):'')+'</span>';
+   }).join('');
+   const debt=m.debtMonths?'<span class="chip debt">'+esc(debtMonthsText(m.debtMonths))+'</span>':'';
+   html+='<div class="payRow"><input class="payCheck" type="checkbox" data-paid="'+esc(m.id)+'" '+(m.paid?'checked':'')+'><div><div class="personName">'+esc(m.name)+'</div><div class="chips">'+chips+debt+'</div>'+(m.note?'<div class="rowMeta">'+esc(m.note)+'</div>':'')+'</div><div class="amounts">'+formatMoneySet(totalDue(m)).split(' + ').map(x=>'<div>'+esc(x)+'</div>').join('')+'</div><button class="iconBtn" data-edit-member="'+esc(m.id)+'">✎</button></div>';
+ });
+ $('paymentList').innerHTML=html;
+ document.querySelectorAll('[data-paid]').forEach(x=>x.addEventListener('change',()=>{const m=state.members.find(v=>v.id===x.dataset.paid);if(m){m.paid=x.checked;save();renderDashboard()}}));
+ document.querySelectorAll('[data-edit-member]').forEach(x=>x.addEventListener('click',()=>openMember(x.dataset.editMember)));
+}
+function renderMembers(){
+ if(!state.members.length){$('memberList').innerHTML='<div class="empty">Учасників поки немає.</div>';return}
+ $('memberList').innerHTML=state.members.map(m=>'<div class="memberRow"><div><div class="rowTitle">'+esc(m.name)+(m.paid?'<span class="badge">сплачено</span>':'')+'</div><div class="rowMeta">'+esc((state.groups.find(g=>g.id===m.groupId)||{}).name||'Без групи')+' · '+memberServices(m).length+' сервісів · '+esc(formatMoneySet(totalDue(m)))+(m.debtMonths?' · '+esc(debtMonthsText(m.debtMonths)):'')+'</div></div><div class="rowActions"><button class="btn secondary smallBtn" data-edit-member="'+esc(m.id)+'">Редагувати</button><button class="btn danger smallBtn" data-delete-member="'+esc(m.id)+'">×</button></div></div>').join('');
+ document.querySelectorAll('[data-edit-member]').forEach(x=>x.addEventListener('click',()=>openMember(x.dataset.editMember)));
+ document.querySelectorAll('[data-delete-member]').forEach(x=>x.addEventListener('click',()=>{const m=state.members.find(v=>v.id===x.dataset.deleteMember);if(m&&confirm('Видалити '+m.name+'?')){state.members=state.members.filter(v=>v.id!==m.id);save();render();toast('Учасника видалено')}}));
+}
+function renderServices(){
+ $('usdRate').textContent=fmt(state.rates.USD)+' ₴';
+ $('eurRate').textContent=fmt(state.rates.EUR)+' ₴';
+ $('ratesUpdated').textContent=state.rates.lastUpdated?'Оновлено: '+new Intl.DateTimeFormat('uk-UA',{dateStyle:'short',timeStyle:'short'}).format(new Date(state.rates.lastUpdated)):'Курс можна оновити автоматично або задати вручну.';
+ if(!state.services.length){$('serviceList').innerHTML='<div class="empty">Сервісів немає.</div>';return}
+ $('serviceList').innerHTML=state.services.map(s=>{
+   const p=participants(s.id),total=serviceTotalUAH(s);
+   return'<div class="serviceRow"><div><div class="rowTitle">'+esc(s.name)+(s.priceChanged?'<span class="badge changed">ціна змінена ‼️</span>':'')+'</div><div class="rowMeta">'+esc(amountText(s.amount,s.currency))+' · '+esc(amountText(total,'UAH'))+' · '+p+'/'+(s.capacity||p)+' учасників · '+formatDate(s.nextDate)+'</div></div><div class="rowActions"><button class="btn secondary smallBtn" data-edit-service="'+esc(s.id)+'">Редагувати</button></div></div>';
+ }).join('');
+ document.querySelectorAll('[data-edit-service]').forEach(x=>x.addEventListener('click',()=>openService(x.dataset.editService)));
+}
+function renderArchive(){
+ if(!state.archives.length){$('archiveList').innerHTML='<div class="empty">Архівів поки немає.</div>';return}
+ $('archiveList').innerHTML=[...state.archives].reverse().map((a,idx)=>{
+   const paid=a.rows.filter(r=>r.paid).length;
+   let msgs=(a.messages||[]).map((m,i)=>'<div class="messageBox">'+esc(m.text)+'</div><button class="btn secondary smallBtn" data-copy-archive="'+idx+'-'+i+'" style="margin-top:6px">Копіювати</button>').join('');
+   return'<div class="archiveRow"><div><div class="rowTitle">'+esc(monthLabel(a.cycle))+'</div><div class="rowMeta">'+paid+'/'+a.rows.length+' сплачено · створено '+new Intl.DateTimeFormat('uk-UA',{dateStyle:'short'}).format(new Date(a.createdAt))+'</div><details class="archiveDetails"><summary>Показати звіт</summary>'+msgs+'</details></div></div>';
+ }).join('');
+ document.querySelectorAll('[data-copy-archive]').forEach(b=>b.addEventListener('click',async()=>{const [rev,i]=b.dataset.copyArchive.split('-').map(Number),a=[...state.archives].reverse()[rev],m=a.messages[i];try{await navigator.clipboard.writeText(m.text);toast('Скопійовано')}catch(e){}}));
+}
+function renderSettings(){
+ $('cycleInput').value=state.cycle;$('billingDay').value=state.billingDay;$('usdInput').value=state.rates.USD;$('eurInput').value=state.rates.EUR;
+ $('groupSettings').innerHTML=state.groups.map((g,i)=>'<div class="settingsGroup"><div class="formGrid"><div class="field"><label>Назва групи</label><input data-group-name="'+i+'" value="'+esc(g.name)+'"></div><div class="field"><label>Імʼя власника картки</label><input data-group-holder="'+i+'" value="'+esc(g.cardHolder||'')+'"></div><div class="field full"><label>Номер картки</label><input inputmode="numeric" data-group-card="'+i+'" value="'+esc(g.cardNumber||'')+'" placeholder="Зберігається тільки на цьому пристрої"></div></div><button class="btn danger smallBtn" data-delete-group="'+i+'" style="margin-top:8px" '+(state.groups.length===1?'disabled':'')+'>Видалити групу</button></div>').join('');
+ document.querySelectorAll('[data-delete-group]').forEach(b=>b.addEventListener('click',()=>{const i=Number(b.dataset.deleteGroup),g=state.groups[i];if(confirm('Видалити групу «'+g.name+'»?')){const fallback=state.groups.find((_,x)=>x!==i);state.members.forEach(m=>{if(m.groupId===g.id)m.groupId=fallback.id});state.groups.splice(i,1);save();renderSettings();toast('Групу видалено')}}));
+}
+function render(){ $('today').textContent=new Intl.DateTimeFormat('uk-UA',{day:'2-digit',month:'long',year:'numeric'}).format(today());renderDashboard();renderMembers();renderServices();renderArchive();renderSettings();renderNav() }
+
+function assignmentHtml(member){
+ return state.services.map(s=>{
+  const a=member&&member.assignments&&member.assignments[s.id]||{};
+  const active=a.active!==false&&!!(member&&member.assignments&&member.assignments[s.id]);
+  const mode=a.mode||'UAH';
+  return'<div class="assignRow"><div class="assignTop"><input type="checkbox" data-as-active="'+esc(s.id)+'" '+(active?'checked':'')+'><div class="assignName">'+esc(s.name)+'</div><div class="small">'+esc(amountText(s.amount,s.currency))+'</div></div><div class="assignOpts '+(active?'':'hidden')+'" data-as-opts="'+esc(s.id)+'"><div class="field"><label>Сплачено наперед до</label><input type="month" data-as-prepaid="'+esc(s.id)+'" value="'+esc(a.prepaidUntil||'')+'"></div><div class="field"><label>Як рахувати</label><select data-as-mode="'+esc(s.id)+'"><option value="UAH" '+(mode==='UAH'?'selected':'')+'>У гривні</option><option value="SERVICE" '+(mode==='SERVICE'?'selected':'')+'>У валюті сервісу</option><option value="CUSTOM" '+(mode==='CUSTOM'?'selected':'')+'>Власна сума</option></select></div><div class="field"><label>Власна сума</label><div style="display:grid;grid-template-columns:1fr 82px;gap:5px"><input inputmode="decimal" data-as-custom="'+esc(s.id)+'" value="'+esc(a.customAmount??'')+'"><select data-as-custom-cur="'+esc(s.id)+'"><option '+((a.customCurrency||'UAH')==='UAH'?'selected':'')+'>UAH</option><option '+(a.customCurrency==='EUR'?'selected':'')+'>EUR</option><option '+(a.customCurrency==='USD'?'selected':'')+'>USD</option></select></div></div></div></div>';
+ }).join('');
+}
+function openMember(id){
+ editingMember=id||null;const m=id?state.members.find(x=>x.id===id):null;
+ $('memberModalTitle').textContent=m?'Редагувати учасника':'Новий учасник';
+ $('memberName').value=m?m.name:'';$('memberExcluded').checked=!!(m&&m.excluded);$('memberNote').value=m?m.note||'':'';
+ $('memberGroup').innerHTML=state.groups.map(g=>'<option value="'+esc(g.id)+'">'+esc(g.name)+'</option>').join('');$('memberGroup').value=m?m.groupId:state.groups[0].id;
+ $('assignmentList').innerHTML=assignmentHtml(m);
+ document.querySelectorAll('[data-as-active]').forEach(x=>x.addEventListener('change',()=>{document.querySelector('[data-as-opts="'+x.dataset.asActive+'"]').classList.toggle('hidden',!x.checked)}));
+ openModal('memberModal');
+}
+$('addMemberBtn').addEventListener('click',()=>openMember());
+$('memberForm').addEventListener('submit',e=>{
+ e.preventDefault();const assignments={};
+ state.services.forEach(s=>{const chk=document.querySelector('[data-as-active="'+s.id+'"]');if(chk&&chk.checked){assignments[s.id]={active:true,prepaidUntil:document.querySelector('[data-as-prepaid="'+s.id+'"]').value,mode:document.querySelector('[data-as-mode="'+s.id+'"]').value,customAmount:document.querySelector('[data-as-custom="'+s.id+'"]').value,customCurrency:document.querySelector('[data-as-custom-cur="'+s.id+'"]').value}}});
+ if(editingMember){const m=state.members.find(x=>x.id===editingMember);Object.assign(m,{name:$('memberName').value.trim(),groupId:$('memberGroup').value,excluded:$('memberExcluded').checked,note:$('memberNote').value.trim(),assignments})}
+ else state.members.push({id:uid(),name:$('memberName').value.trim(),groupId:$('memberGroup').value,excluded:$('memberExcluded').checked,note:$('memberNote').value.trim(),assignments,paid:false,debtMonths:0,debt:emptyMoney()});
+ save();closeModal('memberModal');render();toast('Учасника збережено');
+});
+
+function openService(id){
+ editingService=id||null;const s=id?state.services.find(x=>x.id===id):null;
+ $('serviceModalTitle').textContent=s?'Редагувати сервіс':'Новий сервіс';$('serviceName').value=s?s.name:'';$('serviceAmount').value=s?s.amount:'';$('serviceCurrency').value=s?s.currency:'UAH';$('serviceDate').value=s?s.nextDate:'';$('serviceInterval').value=s?String(s.interval||1):'1';$('serviceCapacity').value=s?s.capacity||1:1;$('deleteServiceBtn').style.display=s?'inline-block':'none';openModal('serviceModal');
+}
+$('addServiceBtn').addEventListener('click',()=>openService());
+$('serviceForm').addEventListener('submit',e=>{
+ e.preventDefault();const data={name:$('serviceName').value.trim(),amount:num($('serviceAmount').value),currency:$('serviceCurrency').value,nextDate:$('serviceDate').value,interval:Number($('serviceInterval').value),capacity:Math.max(1,Number($('serviceCapacity').value)||1)};
+ if(editingService){const s=state.services.find(x=>x.id===editingService);const changed=s.amount!==data.amount||s.currency!==data.currency;s.name=data.name;s.amount=data.amount;s.currency=data.currency;s.nextDate=data.nextDate;s.interval=data.interval;s.capacity=data.capacity;if(changed)s.priceChanged=true}
+ else state.services.push({id:uid(),...data,priceChanged:false});
+ save();closeModal('serviceModal');render();toast('Сервіс збережено');
+});
+$('deleteServiceBtn').addEventListener('click',()=>{if(!editingService)return;const s=state.services.find(x=>x.id===editingService);if(confirm('Видалити сервіс «'+s.name+'»?')){state.services=state.services.filter(x=>x.id!==editingService);state.members.forEach(m=>{if(m.assignments)delete m.assignments[editingService]});save();closeModal('serviceModal');render();toast('Сервіс видалено')}});
+
+function generateMessages(){
+ return state.groups.map(g=>{
+   const lines=[];
+   state.members.filter(m=>m.groupId===g.id&&!m.excluded).forEach(m=>{
+     const prepaid=[],current=[],used=[];
+     memberServices(m).forEach(s=>{const a=m.assignments[s.id];used.push(s);if(isPrepaid(a))prepaid.push(s.name+' (сплачено по '+shortMonth(a.prepaidUntil)+')');else current.push(s.name)});
+     const parts=[...prepaid];
+     if(current.length){let t=current.join(', ');const due=totalDue(m);if(hasMoney(due))t+=' - '+formatMoneySet(due);parts.push(t)}
+     else if(hasMoney(totalDue(m)))parts.push(formatMoneySet(totalDue(m)));
+     if(!parts.length)return;
+     let line=m.name+' - '+parts.join(', ');
+     if(used.some(s=>s.priceChanged))line+=' ‼️';
+     lines.push(line);
+   });
+   let text='Мої вітання 👋🏻\n'+pad(state.billingDay)+'.'+shortMonth(state.cycle)+' час оновлення підписок.\n\nБудь ласка, будьте уважні при оплаті та перевіряйте реквізити 🫶🏻\nНе забувайте надсилати «➕» чи «✅» після оплати.\n\n❗ Оплати приймаються максимум на 3 місяці ❗\n\n❗ Якщо плануєте скасувати підписку, будь ласка, повідомте про це за місяць. ❗\n\n'+g.name+(g.cardHolder?' (картка на імʼя - '+g.cardHolder+')':'')+':\n\n'+lines.join('\n');
+   if(g.cardNumber)text+='\n\n'+g.cardNumber;
+   return{groupId:g.id,groupName:g.name,text};
+ });
+}
+function showMessages(){
+ const msgs=generateMessages();$('messagesBody').innerHTML=msgs.map((m,i)=>'<div style="font-weight:760;margin-top:'+(i?'18':'0')+'px">'+esc(m.groupName)+'</div><div class="messageBox">'+esc(m.text)+'</div><button class="btn secondary smallBtn" data-copy-msg="'+i+'" style="margin-top:6px">Копіювати</button>').join('');
+ document.querySelectorAll('[data-copy-msg]').forEach(b=>b.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(msgs[Number(b.dataset.copyMsg)].text);toast('Скопійовано')}catch(e){toast('Не вдалося скопіювати')}}));openModal('messagesModal');
+}
+$('copyMessagesBtn').addEventListener('click',showMessages);
+
+$('closeMonthBtn').addEventListener('click',()=>openModal('closeModal'));
+$('confirmCloseMonth').addEventListener('click',()=>{
+ const messages=generateMessages();
+ const rows=state.members.map(m=>({id:m.id,name:m.name,groupId:m.groupId,paid:!!m.paid,note:m.note||'',debtMonths:m.debtMonths||0,due:totalDue(m),services:memberServices(m).map(s=>s.name)}));
+ state.archives.push({id:uid(),cycle:state.cycle,createdAt:new Date().toISOString(),rows,messages,rates:{...state.rates}});
+ state.members.forEach(m=>{
+   if(m.paid){m.debt=emptyMoney();m.debtMonths=0}
+   else{const cur=currentDue(m);if(hasMoney(cur)){m.debt=addMoney(m.debt||emptyMoney(),cur);m.debtMonths=(m.debtMonths||0)+1}}
+   m.paid=false;
+ });
+ state.services.forEach(s=>s.priceChanged=false);
+ state.cycle=plusMonth(state.cycle,1);save();closeModal('closeModal');render();toast('Місяць закрито');
+});
+
+$('saveCoreSettings').addEventListener('click',()=>{state.cycle=$('cycleInput').value||state.cycle;state.billingDay=Math.min(28,Math.max(1,Number($('billingDay').value)||15));state.rates.USD=num($('usdInput').value)||state.rates.USD;state.rates.EUR=num($('eurInput').value)||state.rates.EUR;save();render();toast('Налаштування збережено')});
+$('addGroupBtn').addEventListener('click',()=>{state.groups.push({id:uid(),name:'Нова група',cardHolder:'',cardNumber:''});save();renderSettings()});
+$('groupSettings').addEventListener('change',e=>{const attrs=['groupName','groupHolder','groupCard'];let key=attrs.find(k=>e.target.dataset[k]!==undefined);if(!key)return;const i=Number(e.target.dataset[key]),g=state.groups[i];if(key==='groupName')g.name=e.target.value.trim()||g.name;if(key==='groupHolder')g.cardHolder=e.target.value.trim();if(key==='groupCard')g.cardNumber=e.target.value.trim();save();renderDashboard()});
+
+async function refreshRates(show=true){
+ try{
+  const res=await fetch('https://api.monobank.ua/bank/currency',{cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);
+  const data=await res.json(),usd=data.find(x=>x.currencyCodeA===840&&x.currencyCodeB===980),eur=data.find(x=>x.currencyCodeA===978&&x.currencyCodeB===980);
+  if(!usd||!eur)throw new Error('rate');
+  state.rates.USD=num(usd.rateSell||usd.rateCross);state.rates.EUR=num(eur.rateSell||eur.rateCross);state.rates.lastUpdated=new Date().toISOString();save();renderServices();renderSettings();if(show)toast('Курси оновлено');
+ }catch(e){if(show)toast('Не вдалося оновити курс. Можна ввести вручну.')}
+}
+$('refreshRatesBtn').addEventListener('click',()=>refreshRates(true));
+function maybeRefreshRates(){if(!state.rates.lastUpdated||Date.now()-new Date(state.rates.lastUpdated).getTime()>6*3600000)refreshRates(false)}
+
+$('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='payment-confirm-'+state.cycle+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),400)});
+$('importBtn').addEventListener('click',()=>$('importFile').click());
+$('importFile').addEventListener('change',async()=>{const f=$('importFile').files[0];if(!f)return;try{const v=JSON.parse(await f.text());if(!v||!Array.isArray(v.services)||!Array.isArray(v.members))throw new Error();state={...defaultState(),...v};save();render();toast('Дані імпортовано')}catch(e){toast('Файл не підходить')}$('importFile').value=''});
+$('resetBtn').addEventListener('click',()=>{if(confirm('Повністю очистити всі дані цього застосунку?')){state=defaultState();save();render();toast('Дані очищено')}});
+
+load();rollServiceDates();render();maybeRefreshRates();
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1').catch(()=>{}));
+})();
+</script>
+</body>
+</html>
