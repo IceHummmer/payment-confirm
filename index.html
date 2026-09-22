@@ -150,7 +150,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 <div class="modalTop"><h2 id="memberModalTitle">Учасник</h2><button class="modalClose" data-close="memberModal">×</button></div>
 <form id="memberForm">
 <div class="formGrid">
-<div class="field"><label>Прізвище Імʼя</label><input id="memberName" required maxlength="80" placeholder="Наприклад, Більмак Ельвіна"></div>
+<div class="field"><label>Імʼя Прізвище</label><input id="memberName" required maxlength="80" placeholder="Наприклад, Ельвіна Більмак"></div>
 <div class="field"><label>Група</label><select id="memberGroup"></select></div>
 <div class="field full"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="memberExcluded" style="width:20px;height:20px;min-height:0"> Не включати до повідомлення про оплату</label></div>
 <div class="field full"><label>Примітка</label><input id="memberNote" maxlength="120"></div>
@@ -326,7 +326,17 @@ function groupPaymentStats(groupId){
  return{paid,total};
 }
 function debtMonthsText(n){if(!n)return'';const a=n%10,b=n%100,word=(a===1&&b!==11)?'місяць':(a>=2&&a<=4&&!(b>=12&&b<=14))?'місяці':'місяців';return'Борг за '+n+' '+word}
-function sortMembersByName(list){return [...list].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'uk',{sensitivity:'base'}))}
+function surnameSortKey(name){
+ const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
+ if(!parts.length)return'';
+ const surname=parts[parts.length-1];
+ const firstNames=parts.slice(0,-1).join(' ');
+ return surname+'\u0000'+firstNames;
+}
+function compareMembersBySurname(a,b){
+ return surnameSortKey(a&&a.name).localeCompare(surnameSortKey(b&&b.name),'uk',{sensitivity:'base'});
+}
+function sortMembersByName(list){return [...list].sort(compareMembersBySurname)}
 function rollServiceDates(){
  const t=ymd(today());let changed=false;
  state.services.forEach(s=>{
@@ -358,7 +368,7 @@ function renderDashboard(){
  $('serviceCount').textContent=state.services.length;
  if(!state.members.length){$('paymentList').innerHTML='<div class="empty">Додайте учасників у розділі «Учасники».</div>';return}
  const groups=new Map(state.groups.map(g=>[g.id,g.name]));
- const ordered=[...state.members].sort((a,b)=>(groups.get(a.groupId)||'').localeCompare(groups.get(b.groupId)||'','uk',{sensitivity:'base'})||String(a.name||'').localeCompare(String(b.name||''),'uk',{sensitivity:'base'}));
+ const ordered=[...state.members].sort((a,b)=>(groups.get(a.groupId)||'').localeCompare(groups.get(b.groupId)||'','uk',{sensitivity:'base'})||compareMembersBySurname(a,b));
  let html='',lastGroup='';
  ordered.forEach(m=>{
    const g=groups.get(m.groupId)||'Без групи';
@@ -578,7 +588,7 @@ $('importFile').addEventListener('change',async()=>{
 $('resetBtn').addEventListener('click',()=>{if(confirm('Повністю очистити всі дані цього застосунку?')){state=defaultState();save();render();toast('Дані очищено')}});
 
 load();rollServiceDates();render();maybeRefreshRates();
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=3').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=4').catch(()=>{}));
 })();
 </script>
 </body>
