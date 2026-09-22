@@ -500,18 +500,19 @@ function generateMessages(){
    'Не забувайте надсилати «➕» чи «✅» при оплаті підписки (це стосується тих хто відправляє кошти на карту Артема)\n\n'+
    '❗ Оплати приймаються максимум на 3 місяці ❗\n\n'+
    '❗ Якщо плануєте скасувати підписку, будь ласка, напишіть мені про це за місяць. Інакше доведеться оплатити ще один місяць користування.❗\n\n'+
-   'Дякую за вашу увагу та гарного вам місяця ✨\n\n';
- const firstText=intro+
+   'Дякую за вашу увагу та гарного вам місяця ✨';
+ const familyText=
    g1.name+(g1.cardHolder?' (картка на імʼя - '+g1.cardHolder+')':'')+':\n\n'+
    lines1.join('\n');
- const thirdText=
+ const netflixText=
    g2.name+(g2.cardHolder?' (картка на імʼя - '+g2.cardHolder+')':'')+':\n\n'+
    lines2.join('\n');
  return[
-   {title:'Повідомлення 1/4 — основний текст',text:firstText},
-   {title:'Повідомлення 2/4 — картка '+g1.name,text:g1.cardNumber||'Номер картки не вказано'},
-   {title:'Повідомлення 3/4 — '+g2.name,text:thirdText},
-   {title:'Повідомлення 4/4 — картка '+g2.name,text:g2.cardNumber||'Номер картки не вказано'}
+   {title:'Повідомлення 1/5 — вступ',text:intro},
+   {title:'Повідомлення 2/5 — '+g1.name,text:familyText},
+   {title:'Повідомлення 3/5 — картка '+g1.name,text:g1.cardNumber||'Номер картки не вказано'},
+   {title:'Повідомлення 4/5 — '+g2.name,text:netflixText},
+   {title:'Повідомлення 5/5 — картка '+g2.name,text:g2.cardNumber||'Номер картки не вказано'}
  ];
 }
 function showMessages(){
@@ -590,7 +591,7 @@ $('importFile').addEventListener('change',async()=>{
 $('resetBtn').addEventListener('click',()=>{if(confirm('Повністю очистити всі дані цього застосунку?')){state=defaultState();save();render();toast('Дані очищено')}});
 
 load();rollServiceDates();render();maybeRefreshRates();
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=6').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=7').catch(()=>{}));
 })();
 </script>
 </body>
