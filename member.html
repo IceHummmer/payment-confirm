@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f7f5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>Мої підписки</title>
+<style>
+:root{--bg:#f6f7f5;--card:#fff;--text:#14251e;--muted:#6b7671;--line:#dfe4e1;--soft:#f1f4f2;--green:#245d49;--green2:#2f745b;--greenSoft:#e9f3ee;--amber:#9a6700;--amberSoft:#fff7dc;--red:#b42318;--shadow:0 8px 24px rgba(20,37,30,.06)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}button{cursor:pointer}.app{max-width:720px;margin:0 auto;padding:18px 12px 50px}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:3px 0 14px}.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:750}h1{font-size:26px;letter-spacing:-.03em;margin:4px 0 0}
+.card{background:#fff;border:1px solid var(--line);border-radius:19px;padding:16px;box-shadow:var(--shadow);margin-top:11px}.small{font-size:12px;color:var(--muted);line-height:1.45}.metric{font-size:30px;font-weight:820;letter-spacing:-.035em}.btn{border:0;border-radius:12px;min-height:44px;padding:10px 14px;background:var(--green);color:#fff;font-weight:760;font-size:15px}.btn.secondary{background:var(--soft);color:var(--text);border:1px solid var(--line)}.btn:disabled{opacity:.5}.full{width:100%}
+.row{padding:11px 0;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.rowTitle{font-weight:760}.rowMeta{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45}.between{display:flex;justify-content:space-between;align-items:center;gap:12px}.amount{font-weight:800;white-space:nowrap}.chip{display:inline-flex;font-size:11px;padding:4px 7px;border-radius:999px;background:var(--soft);color:var(--muted);margin:4px 4px 0 0}.chip.good{background:var(--greenSoft);color:var(--green)}.chip.warn{background:var(--amberSoft);color:var(--amber)}
+.notice{padding:11px 12px;border-radius:12px;background:var(--greenSoft);color:var(--green);font-size:13px;line-height:1.5}.notice.warn{background:var(--amberSoft);color:var(--amber)}
+.cardNumber{font-size:18px;font-weight:780;letter-spacing:.03em;margin-top:8px;word-break:break-all}.sectionTitle{font-size:18px;font-weight:800;margin:0 0 8px}
+.gate{min-height:100vh;display:grid;place-items:center;padding:20px}.gateCard{width:min(420px,100%);background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}.gateCard h2{margin:4px 0 8px;font-size:24px}.gateCard p{color:var(--muted);line-height:1.5}
+.hidden{display:none!important}.historyItem{padding:10px 0;border-bottom:1px solid var(--line)}.historyItem:last-child{border-bottom:0}.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translate(-50%,12px);opacity:0;pointer-events:none;background:#17261f;color:#fff;padding:10px 13px;border-radius:12px;z-index:40;font-size:13px;transition:.2s}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:520px){.hero{align-items:flex-start}.metric{font-size:27px}}
+</style>
+</head>
+<body>
+<div class="gate" id="gate">
+  <div class="gateCard">
+    <div class="eyebrow">Особистий доступ</div>
+    <h2 id="gateTitle">Мої підписки</h2>
+    <p id="gateText">Ця сторінка відкривається через персональне запрошення.</p>
+    <button class="btn full hidden" id="acceptInviteBtn">Прийняти запрошення</button>
+    <div class="small" id="gateStatus" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<main class="app hidden" id="app">
+  <div class="hero">
+    <div><div class="eyebrow">Мої підписки</div><h1 id="memberName"></h1><div class="small" id="cycleLabel"></div></div>
+    <button class="btn secondary" id="logoutBtn">Вийти</button>
+  </div>
+
+  <div class="card">
+    <div class="between"><div><div class="small">До сплати</div><div class="metric" id="totalDue"></div></div><div id="paymentStatus"></div></div>
+    <div id="debtNote" class="small" style="margin-top:6px"></div>
+    <button class="btn full" id="paidBtn" style="margin-top:14px">Я оплатив</button>
+  </div>
+
+  <div id="priceNotice" class="card hidden"></div>
+
+  <div class="card">
+    <div class="sectionTitle">Куди сплачувати</div>
+    <div id="groupCards"></div>
+  </div>
+
+  <div class="card">
+    <div class="sectionTitle">Мої підписки</div>
+    <div id="serviceList"></div>
+  </div>
+
+  <div class="card">
+    <div class="sectionTitle">Нагадування</div>
+    <div class="small">Push-нагадування надходитимуть перед днем оплати, у день оплати та якщо оплата ще очікується. На iPhone push працює для сайту, доданого на головний екран.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn" id="enablePushBtn">Увімкнути push</button>
+      <button class="btn secondary hidden" id="disablePushBtn">Вимкнути</button>
+    </div>
+    <div class="small" id="pushStatus" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <div class="sectionTitle">Історія оплат</div>
+    <div id="historyList"></div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const API='https://payment-confirm-api.onrender.com';
+const TOKEN_KEY='payment-confirm-member-token';
+let memberToken=localStorage.getItem(TOKEN_KEY)||'';
+let current=null;
+const $=id=>document.getElementById(id);
+const num=v=>{const n=parseFloat(String(v??'').replace(/\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0};
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const hasMoney=m=>['UAH','USD','EUR'].some(c=>Math.abs(num(m&&m[c]))>.0001);
+function amountText(n,c){n=num(n);if(c==='UAH')return new Intl.NumberFormat('uk-UA',{maximumFractionDigits:0}).format(n)+' грн';if(c==='EUR')return '€'+n.toFixed(2).replace(/\.00$/,'');return '$'+n.toFixed(2).replace(/\.00$/,'')}
+function moneyText(m){return ['UAH','EUR','USD'].filter(c=>Math.abs(num(m&&m[c]))>.0001).map(c=>amountText(m[c],c)).join(' + ')||'0 грн'}
+function shortMonth(s){const a=String(s||'').split('-');return a.length===2?a[1]+'.'+a[0]:s}
+function monthLabel(s){const a=String(s||'').split('-').map(Number);if(!a[0]||!a[1])return s;return new Intl.DateTimeFormat('uk-UA',{month:'long',year:'numeric'}).format(new Date(a[0],a[1]-1,1))}
+function formatDateTime(s){if(!s)return'';return new Intl.DateTimeFormat('uk-UA',{dateStyle:'short',timeStyle:'short'}).format(new Date(s))}
+function toast(t){$('toast').textContent=t;$('toast').classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').classList.remove('show'),1800)}
+
+async function api(path,options={},withAuth=true){
+ const headers={'Content-Type':'application/json',...(options.headers||{})};
+ if(withAuth&&memberToken)headers.Authorization='Bearer '+memberToken;
+ const res=await fetch(API+path,{...options,headers,cache:'no-store'});
+ let data={};try{data=await res.json()}catch(e){}
+ if(!res.ok){const err=new Error(data.message||data.error||('HTTP '+res.status));err.code=data.error;err.status=res.status;throw err}
+ return data;
+}
+
+function historyLabel(x){
+ return ({
+   self_mark_paid:'Я відмітив оплату',
+   admin_mark_paid:'Оплату підтверджено',
+   admin_unmark_paid:'Позначку оплати знято',
+   archive:x.paid?'Місяць оплачено':'Місяць закрито без оплати'
+ })[x.type]||x.type||'Подія';
+}
+
+function showApp(){
+ $('gate').classList.add('hidden');$('app').classList.remove('hidden');
+}
+function showGate(text){
+ $('app').classList.add('hidden');$('gate').classList.remove('hidden');
+ $('gateText').textContent=text||'Ця сторінка відкривається через персональне запрошення.';
+}
+
+function render(){
+ if(!current)return;
+ const m=current;
+ $('memberName').textContent=m.name;
+ $('cycleLabel').textContent='Період: '+monthLabel(m.cycle)+' · день оплати '+String(m.billingDay).padStart(2,'0');
+ $('totalDue').textContent=moneyText(m.totalDue);
+ $('paymentStatus').innerHTML=m.paid?'<span class="chip good">Оплачено ✓</span>':'<span class="chip warn">Очікується</span>';
+ $('paidBtn').disabled=!!m.paid;
+ $('paidBtn').textContent=m.paid?'Оплату відмічено ✓':'Я оплатив';
+ $('debtNote').textContent=m.debtMonths?('Є борг за '+m.debtMonths+' міс.'):'';
+
+ const changed=m.services.filter(s=>s.priceChanged);
+ if(changed.length){
+   $('priceNotice').classList.remove('hidden');
+   $('priceNotice').innerHTML='<div class="sectionTitle">Зміна ціни</div>'+changed.map(s=>{
+     let text='<strong>'+esc(s.name)+'</strong> — ціна змінилась';
+     if(s.previousPrice)text+=' з '+esc(amountText(s.previousPrice.amount,s.previousPrice.currency))+' на '+esc(amountText(s.amount,s.currency));
+     return'<div class="notice warn" style="margin-top:7px">'+text+'</div>';
+   }).join('');
+ }else $('priceNotice').classList.add('hidden');
+
+ const groupDue=m.dueByGroup||{};
+ $('groupCards').innerHTML=(m.groups||[]).map(g=>{
+   const due=groupDue[g.id]||{};
+   return'<div class="row"><div class="between"><div><div class="rowTitle">'+esc(g.name)+'</div><div class="rowMeta">'+(g.cardHolder?'Картка на імʼя '+esc(g.cardHolder):'')+'</div></div><div class="amount">'+esc(moneyText(due))+'</div></div>'+
+     (g.cardNumber?'<div class="cardNumber">'+esc(g.cardNumber)+'</div><button class="btn secondary" style="margin-top:8px" data-copy-card="'+esc(g.cardNumber)+'">Копіювати картку</button>':'<div class="rowMeta">Номер картки не вказано</div>')+
+     '</div>';
+ }).join('')||'<div class="small">Немає платіжних груп.</div>';
+ document.querySelectorAll('[data-copy-card]').forEach(b=>b.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(b.dataset.copyCard);toast('Номер картки скопійовано')}catch(e){}}));
+
+ $('serviceList').innerHTML=(m.services||[]).map(s=>{
+   const share=s.prepaid?'<span class="chip good">сплачено по '+esc(shortMonth(s.prepaidUntil))+'</span>':(s.share?'<span class="amount">'+esc(amountText(s.share.amount,s.share.currency))+'</span>':'');
+   return'<div class="row"><div class="between"><div><div class="rowTitle">'+esc(s.name)+(s.priceChanged?' ‼️':'')+'</div><div class="rowMeta">'+esc((s.group&&s.group.name)||'')+(s.nextDate?' · наступне списання '+esc(s.nextDate):'')+'</div></div>'+share+'</div></div>';
+ }).join('')||'<div class="small">Активних підписок немає.</div>';
+
+ $('historyList').innerHTML=(m.history||[]).map(x=>
+   '<div class="historyItem"><div class="rowTitle">'+esc(historyLabel(x))+'</div><div class="rowMeta">'+esc(x.cycle||'')+
+   (x.amount&&hasMoney(x.amount)?' · '+esc(moneyText(x.amount)):'')+
+   (x.at?' · '+esc(formatDateTime(x.at)):'')+'</div></div>'
+ ).join('')||'<div class="small">Історія поки порожня.</div>';
+}
+
+async function loadMe(){
+ try{
+   const data=await api('/api/member/me');
+   current=data.member;showApp();render();await updatePushUi();
+ }catch(e){
+   memberToken='';localStorage.removeItem(TOKEN_KEY);showGate('Доступ не активний. Попросіть адміністратора створити нове запрошення.');
+ }
+}
+
+$('paidBtn').addEventListener('click',async()=>{
+ if(!current||current.paid)return;
+ if(!confirm('Відмітити оплату за поточний період?'))return;
+ $('paidBtn').disabled=true;
+ try{
+   const data=await api('/api/member/paid',{method:'POST'});
+   current=data.member;render();toast('Оплату відмічено');
+ }catch(e){toast('Не вдалося відмітити оплату');$('paidBtn').disabled=false}
+});
+
+$('logoutBtn').addEventListener('click',()=>{
+ memberToken='';localStorage.removeItem(TOKEN_KEY);current=null;showGate('Доступ на цьому пристрої завершено. Для повторного входу потрібне нове запрошення.');
+});
+
+function urlBase64ToUint8Array(base64String){
+ const padding='='.repeat((4-base64String.length%4)%4);
+ const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+ const rawData=atob(base64);
+ return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)));
+}
+
+async function updatePushUi(){
+ if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window)){
+   $('pushStatus').textContent='Push не підтримується цим браузером.';
+   $('enablePushBtn').disabled=true;return;
+ }
+ try{
+   const reg=await navigator.serviceWorker.ready;
+   const sub=await reg.pushManager.getSubscription();
+   $('enablePushBtn').classList.toggle('hidden',!!sub);
+   $('disablePushBtn').classList.toggle('hidden',!sub);
+   $('pushStatus').textContent=sub?'Push-нагадування увімкнені.':'Push-нагадування вимкнені.';
+ }catch(e){}
+}
+
+$('enablePushBtn').addEventListener('click',async()=>{
+ try{
+   if(Notification.permission!=='granted'){
+     const permission=await Notification.requestPermission();
+     if(permission!=='granted'){toast('Дозвіл на сповіщення не надано');return}
+   }
+   const keyData=await api('/api/push/public-key',{},false);
+   if(!keyData.configured||!keyData.publicKey){toast('Push ще не налаштований на сервері');return}
+   const reg=await navigator.serviceWorker.ready;
+   const subscription=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(keyData.publicKey)});
+   await api('/api/member/push',{method:'POST',body:JSON.stringify({subscription})});
+   toast('Push-нагадування увімкнено');updatePushUi();
+ }catch(e){console.error(e);toast('Не вдалося увімкнути push')}
+});
+
+$('disablePushBtn').addEventListener('click',async()=>{
+ try{
+   const reg=await navigator.serviceWorker.ready;
+   const sub=await reg.pushManager.getSubscription();
+   if(sub){
+     await api('/api/member/push',{method:'DELETE',body:JSON.stringify({endpoint:sub.endpoint})});
+     await sub.unsubscribe();
+   }
+   toast('Push-нагадування вимкнено');updatePushUi();
+ }catch(e){toast('Не вдалося вимкнути push')}
+});
+
+const invite=new URLSearchParams(location.search).get('invite');
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=10').catch(()=>{});
+if(invite){
+ $('gateTitle').textContent='Персональне запрошення';
+ $('gateText').textContent='Після активації цей пристрій отримає доступ тільки до ваших підписок, сум та історії оплат.';
+ $('acceptInviteBtn').classList.remove('hidden');
+ $('acceptInviteBtn').addEventListener('click',async()=>{
+   $('acceptInviteBtn').disabled=true;$('gateStatus').textContent='Активація…';
+   try{
+     const data=await api('/api/invite/redeem',{method:'POST',body:JSON.stringify({token:invite})},false);
+     memberToken=data.token;localStorage.setItem(TOKEN_KEY,memberToken);current=data.member;
+     history.replaceState({},'',location.pathname);
+     showApp();render();await updatePushUi();
+   }catch(e){
+     $('gateStatus').textContent='Запрошення недійсне або вже використане.';
+     $('acceptInviteBtn').disabled=false;
+   }
+ });
+}else if(memberToken){
+ loadMe();
+}else{
+ showGate('Попросіть адміністратора надіслати персональне запрошення.');
+}
+})();
+</script>
+</body>
+</html>
