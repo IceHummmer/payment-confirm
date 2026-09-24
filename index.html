@@ -26,7 +26,7 @@ body.authenticated .authGate{display:none}
 .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:750}h1{font-size:26px;letter-spacing:-.03em;margin:4px 0 0}
 .small{font-size:12px;color:var(--muted)}.nav{display:flex;gap:7px;overflow:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
 .nav button{border:1px solid var(--line);background:#fff;color:var(--text);padding:9px 13px;border-radius:999px;white-space:nowrap;font-weight:700}.nav button.active{background:var(--green);color:#fff;border-color:var(--green)}
-.view{display:none}.view.active{display:block}.grid{display:grid;gap:12px}.summary{grid-template-columns:repeat(4,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.view{display:none}.view.active{display:block}.grid{display:grid;gap:12px}.summary{grid-template-columns:repeat(5,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .card{background:var(--card);border:1px solid var(--line);border-radius:19px;padding:17px;box-shadow:var(--shadow)}.cardTitle{font-size:12px;color:var(--muted);margin-bottom:5px}
 .metric{font-size:28px;font-weight:820;letter-spacing:-.035em}.metricSmall{font-size:20px;font-weight:780}
 .paidSplit{display:grid;gap:8px;margin-top:7px}.paidSplitRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:7px;border-bottom:1px solid var(--line)}.paidSplitRow:last-child{border-bottom:0;padding-bottom:0}.paidSplitName{font-size:12px;color:var(--muted);font-weight:700}.paidSplitValue{font-size:20px;font-weight:820;white-space:nowrap}.section{margin-top:12px}.sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.sectionHead h2{font-size:18px;margin:0}
@@ -41,12 +41,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 .rateGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rateBox{padding:13px;border:1px solid var(--line);border-radius:14px;background:var(--soft)}.rateValue{font-size:22px;font-weight:780;margin-top:3px}
 .modalBack{position:fixed;inset:0;background:rgba(8,19,14,.43);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}.modalBack.show{display:flex}.modal{width:min(620px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:20px;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.24)}.modalTop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.modalTop h2{font-size:20px;margin:0}.modalClose{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:#fff;font-size:22px;color:var(--muted)}
 .formGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}.modalActions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
-.assignments{display:grid;gap:8px;margin-top:8px}.assignRow{border:1px solid var(--line);border-radius:13px;padding:10px}.assignTop{display:flex;align-items:center;gap:9px}.assignTop input{width:21px;height:21px;min-height:0;accent-color:var(--green)}.assignName{font-weight:720}.assignOpts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:9px}.assignOpts.hidden{display:none}
+.assignments{display:grid;gap:8px;margin-top:8px}.assignRow{border:1px solid var(--line);border-radius:13px;padding:10px}.assignTop{display:flex;align-items:center;gap:9px}.assignTop input{width:21px;height:21px;min-height:0;accent-color:var(--green)}.assignName{font-weight:720}.assignOpts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}.assignOpts.hidden{display:none}
 .notice{padding:10px 12px;border-radius:12px;background:var(--greenSoft);color:var(--green);font-size:12px;line-height:1.45}.warning{background:var(--amberSoft);color:var(--amber)}
 .messageBox{white-space:pre-wrap;background:var(--soft);border:1px solid var(--line);border-radius:13px;padding:12px;font-size:13px;line-height:1.5;margin-top:8px}.archiveDetails{margin-top:9px}.archiveDetails summary{cursor:pointer;font-weight:720}
 .empty{color:var(--muted);padding:12px 0;font-size:13px}.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translate(-50%,12px);opacity:0;pointer-events:none;background:#17261f;color:#fff;padding:10px 13px;border-radius:12px;z-index:40;font-size:13px;transition:.2s}.toast.show{opacity:1;transform:translate(-50%,0)}
 .closeMonthBar{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(1072px,calc(100% - 24px));display:none;z-index:8}.closeMonthBar.show{display:block}.closeMonthBar button{width:100%;box-shadow:0 10px 30px rgba(20,37,30,.2)}
 .settingsGroup{padding:12px;border:1px solid var(--line);border-radius:13px;margin-top:9px}.settingsGroup .formGrid{margin-top:9px}
+.accessRow,.historyItem,.attentionItem{padding:12px 0;border-bottom:1px solid var(--line)}.accessRow:last-child,.historyItem:last-child,.attentionItem:last-child{border-bottom:0}
+.accessTop,.attentionTop{display:flex;justify-content:space-between;gap:10px;align-items:center}.statusDot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:6px}.statusDot.on{background:var(--green2)}
+.attentionAmount{font-weight:800;white-space:nowrap}.historyType{font-weight:760}.inviteLink{font-size:13px;word-break:break-all;background:var(--soft);padding:10px;border-radius:12px;border:1px solid var(--line)}
 @media(max-width:760px){.summary{grid-template-columns:1fr 1fr}.g2,.formGrid,.assignOpts,.rateGrid{grid-template-columns:1fr}.payRow{grid-template-columns:auto minmax(0,1fr) auto}.payRow .iconBtn{grid-column:3}.amounts{grid-column:2/4;text-align:left}.app{padding-left:12px;padding-right:12px}.card{padding:15px}}
 </style>
 </head>
@@ -72,6 +75,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 <button class="active" data-view="dashboard">Оплати</button>
 <button data-view="members">Учасники</button>
 <button data-view="services">Сервіси</button>
+<button data-view="access">Доступи</button>
+<button data-view="history">Історія</button>
 <button data-view="archive">Архів</button>
 <button data-view="settings">Налаштування</button>
 </div>
@@ -83,8 +88,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
   <div class="cardTitle">Сплатили</div>
   <div class="paidSplit" id="paidByGroup"></div>
 </div>
+<div class="card"><div class="cardTitle">Очікують оплату</div><div class="metric" id="awaitingCount">0</div><div class="small" id="awaitingAmount"></div></div>
 <div class="card"><div class="cardTitle">З боргом</div><div class="metric" id="debtCount">0</div></div>
 <div class="card"><div class="cardTitle">Активні сервіси</div><div class="metric" id="serviceCount">0</div></div>
+</div>
+<div class="card section">
+<div class="sectionHead"><h2>Потребує уваги</h2><button class="btn secondary smallBtn" id="refreshCloudBtn">Оновити</button></div>
+<div id="attentionList"></div>
 </div>
 <div class="card section">
 <div class="sectionHead"><h2>Стан оплат</h2><button class="btn secondary smallBtn" id="copyMessagesBtn">Сформувати повідомлення</button></div>
@@ -125,6 +135,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 </div>
 <div class="small" style="margin-top:9px" id="ratesUpdated"></div>
 </div>
+</div>
+</section>
+
+<section class="view" id="view-access">
+<div class="card">
+<div class="sectionHead"><h2>Доступи учасників</h2><button class="btn secondary smallBtn" id="refreshAccessBtn">Оновити</button></div>
+<div class="notice">Запрошення відкриває особисту сторінку конкретного учасника. Посилання одноразове; після активації на пристрої зберігається лише токен доступу, а не дані інших учасників.</div>
+<div id="accessList" style="margin-top:8px"></div>
+</div>
+</section>
+
+<section class="view" id="view-history">
+<div class="card">
+<div class="sectionHead"><h2>Історія оплат</h2><button class="btn secondary smallBtn" id="refreshHistoryBtn">Оновити</button></div>
+<div id="historyList"></div>
 </div>
 </section>
 
@@ -173,7 +198,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 <form id="memberForm">
 <div class="formGrid">
 <div class="field"><label>Імʼя Прізвище</label><input id="memberName" required maxlength="80"></div>
-<div class="field"><label>Група</label><select id="memberGroup"></select></div>
+<div class="field"><label>Основна сімʼя</label><select id="memberGroup"></select></div>
 <div class="field full"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="memberExcluded" style="width:20px;height:20px;min-height:0"> Не включати до повідомлення про оплату</label></div>
 <div class="field full"><label>Примітка</label><input id="memberNote" maxlength="120"></div>
 </div>
@@ -213,6 +238,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 <div class="modalTop"><h2>Закрити місяць?</h2><button class="modalClose" data-close="closeModal">×</button></div>
 <p class="small" style="font-size:14px;line-height:1.5">Буде створено архів поточного періоду. Для тих, хто не відмічений як «сплачено», поточна сума додасться до боргу. Після цього статуси оплат обнуляться, а період перейде на наступний місяць.</p>
 <div class="modalActions"><button class="btn secondary" data-close="closeModal">Скасувати</button><button class="btn" id="confirmCloseMonth">Підтвердити</button></div>
+</div>
+</div>
+
+<div class="modalBack" id="inviteModal">
+<div class="modal">
+<div class="modalTop"><h2>Запрошення учасника</h2><button class="modalClose" data-close="inviteModal">×</button></div>
+<div class="small" id="inviteMemberName"></div>
+<div class="inviteLink" id="inviteLink" style="margin-top:10px"></div>
+<div class="modalActions"><button class="btn secondary" data-close="inviteModal">Закрити</button><button class="btn" id="copyInviteBtn">Копіювати посилання</button></div>
 </div>
 </div>
 
@@ -371,16 +405,19 @@ function effectiveRate(currency){
  return Math.max(dynamic,stat);
 }
 function serviceTotalUAH(s){if(s.currency==='UAH')return num(s.amount);return num(s.amount)*effectiveRate(s.currency)}
+function assignmentGroupId(member,assignment){return (assignment&&assignment.groupId)||member.groupId||''}
 function participants(serviceId,groupId){
- return state.members.filter(m=>
-   (!groupId||m.groupId===groupId)&&
-   m.assignments&&m.assignments[serviceId]&&m.assignments[serviceId].active!==false
- ).length
+ return state.members.filter(m=>{
+   const a=m.assignments&&m.assignments[serviceId];
+   if(!a||a.active===false)return false;
+   return !groupId||assignmentGroupId(m,a)===groupId;
+ }).length
 }
 function isPrepaid(a){return !!(a&&a.prepaidUntil&&monthCmp(a.prepaidUntil,state.cycle)>=0)}
 function serviceShare(member,service){
  const a=member.assignments&&member.assignments[service.id];if(!a||a.active===false||isPrepaid(a))return null;
- const count=Math.max(1,participants(service.id,member.groupId));
+ const groupId=assignmentGroupId(member,a);
+ const count=Math.max(1,participants(service.id,groupId));
  if(a.mode==='CUSTOM')return{currency:a.customCurrency||'UAH',amount:num(a.customAmount)};
  if(a.mode==='SERVICE')return{currency:service.currency,amount:service.currency==='UAH'?round5(num(service.amount)/count):Math.round(num(service.amount)/count*100)/100};
  return{currency:'UAH',amount:ceil5(serviceTotalUAH(service)/count)};
@@ -394,12 +431,12 @@ function totalDue(member){return addMoney(currentDue(member),member.debt||emptyM
 function memberServices(member){
  return state.services.filter(s=>member.assignments&&member.assignments[s.id]&&member.assignments[s.id].active!==false)
 }
+function groupMembers(groupId){
+ return state.members.filter(m=>memberServices(m).some(s=>assignmentGroupId(m,m.assignments[s.id])===groupId));
+}
 function groupPaymentStats(groupId){
- const members=state.members.filter(m=>m.groupId===groupId);
- return{
-   paid:members.filter(m=>m.paid).length,
-   total:members.length
- };
+ const members=groupMembers(groupId);
+ return{paid:members.filter(m=>m.paid).length,total:members.length};
 }
 function debtMonthsText(n){if(!n)return'';const a=n%10,b=n%100,word=(a===1&&b!==11)?'місяць':(a>=2&&a<=4&&!(b>=12&&b<=14))?'місяці':'місяців';return'Борг за '+n+' '+word}
 function surnameSortKey(name){
@@ -440,8 +477,17 @@ function renderDashboard(){
    const st=groupPaymentStats(g.id);
    return '<div class="paidSplitRow"><span class="paidSplitName">'+esc(g.name)+'</span><span class="paidSplitValue">'+st.paid+'/'+st.total+'</span></div>';
  }).join(''):'<div class="small">Груп немає</div>';
+ const awaiting=state.members.filter(m=>!m.paid&&hasMoney(totalDue(m)));
+ $('awaitingCount').textContent=awaiting.length;
+ const awaitingUAH=awaiting.reduce((sum,m)=>sum+num(totalDue(m).UAH),0);
+ $('awaitingAmount').textContent=awaitingUAH?amountText(awaitingUAH,'UAH'):'';
  $('debtCount').textContent=state.members.filter(m=>m.debtMonths>0).length;
  $('serviceCount').textContent=state.services.length;
+ const upcoming=[...state.services].filter(s=>s.nextDate).sort((a,b)=>String(a.nextDate).localeCompare(String(b.nextDate))).slice(0,3);
+ const attention=[];
+ awaiting.slice(0,5).forEach(m=>attention.push('<div class="attentionItem"><div class="attentionTop"><div><div class="rowTitle">'+esc(m.name)+'</div><div class="rowMeta">Очікується оплата</div></div><div class="attentionAmount">'+esc(formatMoneySet(totalDue(m)))+'</div></div></div>'));
+ upcoming.forEach(s=>attention.push('<div class="attentionItem"><div class="attentionTop"><div><div class="rowTitle">'+esc(s.name)+'</div><div class="rowMeta">Наступне списання '+esc(formatDate(s.nextDate))+(s.priceChanged?' · ціна змінена ‼️':'')+'</div></div></div></div>'));
+ $('attentionList').innerHTML=attention.join('')||'<div class="empty">Нічого термінового.</div>';
  if(!state.members.length){$('paymentList').innerHTML='<div class="empty">Додайте учасників у розділі «Учасники».</div>';return}
  const groups=new Map(state.groups.map(g=>[g.id,g.name]));
  const ordered=[...state.members].sort((a,b)=>(groups.get(a.groupId)||'').localeCompare(groups.get(b.groupId)||'','uk',{sensitivity:'base'})||compareMembersBySurname(a,b));
@@ -496,7 +542,7 @@ function renderArchive(){
 function renderSettings(){
  $('cycleInput').value=state.cycle;$('billingDay').value=state.billingDay;$('usdInput').value=state.rates.static.USD;$('eurInput').value=state.rates.static.EUR;
  $('groupSettings').innerHTML=state.groups.map((g,i)=>'<div class="settingsGroup"><div class="formGrid"><div class="field"><label>Назва групи</label><input data-group-name="'+i+'" value="'+esc(g.name)+'"></div><div class="field"><label>Імʼя власника картки</label><input data-group-holder="'+i+'" value="'+esc(g.cardHolder||'')+'"></div><div class="field full"><label>Номер картки</label><input inputmode="numeric" data-group-card="'+i+'" value="'+esc(g.cardNumber||'')+'" placeholder="Зберігається тільки на цьому пристрої"></div></div><button class="btn danger smallBtn" data-delete-group="'+i+'" style="margin-top:8px" '+(state.groups.length===1?'disabled':'')+'>Видалити групу</button></div>').join('');
- document.querySelectorAll('[data-delete-group]').forEach(b=>b.addEventListener('click',()=>{const i=Number(b.dataset.deleteGroup),g=state.groups[i];if(confirm('Видалити групу «'+g.name+'»?')){const fallback=state.groups.find((_,x)=>x!==i);state.members.forEach(m=>{if(m.groupId===g.id)m.groupId=fallback.id});state.groups.splice(i,1);save();renderSettings();toast('Групу видалено')}}));
+ document.querySelectorAll('[data-delete-group]').forEach(b=>b.addEventListener('click',()=>{const i=Number(b.dataset.deleteGroup),g=state.groups[i];if(confirm('Видалити групу «'+g.name+'»?')){const fallback=state.groups.find((_,x)=>x!==i);state.members.forEach(m=>{if(m.groupId===g.id)m.groupId=fallback.id;Object.values(m.assignments||{}).forEach(a=>{if(a.groupId===g.id)a.groupId=fallback.id})});state.groups.splice(i,1);save();renderSettings();toast('Групу видалено')}}));
 }
 function render(){ $('today').textContent=new Intl.DateTimeFormat('uk-UA',{day:'2-digit',month:'long',year:'numeric'}).format(today());renderDashboard();renderMembers();renderServices();renderArchive();renderSettings();renderNav() }
 
@@ -505,7 +551,9 @@ function assignmentHtml(member){
   const a=member&&member.assignments&&member.assignments[s.id]||{};
   const active=a.active!==false&&!!(member&&member.assignments&&member.assignments[s.id]);
   const mode=a.mode||'UAH';
-  return'<div class="assignRow"><div class="assignTop"><input type="checkbox" data-as-active="'+esc(s.id)+'" '+(active?'checked':'')+'><div class="assignName">'+esc(s.name)+'</div><div class="small">'+esc(amountText(s.amount,s.currency))+'</div></div><div class="assignOpts '+(active?'':'hidden')+'" data-as-opts="'+esc(s.id)+'"><div class="field"><label>Сплачено наперед до</label><input type="month" data-as-prepaid="'+esc(s.id)+'" value="'+esc(a.prepaidUntil||'')+'"></div><div class="field"><label>Як рахувати</label><select data-as-mode="'+esc(s.id)+'"><option value="UAH" '+(mode==='UAH'?'selected':'')+'>У гривні</option><option value="SERVICE" '+(mode==='SERVICE'?'selected':'')+'>У валюті сервісу</option><option value="CUSTOM" '+(mode==='CUSTOM'?'selected':'')+'>Власна сума</option></select></div><div class="field"><label>Власна сума</label><div style="display:grid;grid-template-columns:1fr 82px;gap:5px"><input inputmode="decimal" data-as-custom="'+esc(s.id)+'" value="'+esc(a.customAmount??'')+'"><select data-as-custom-cur="'+esc(s.id)+'"><option '+((a.customCurrency||'UAH')==='UAH'?'selected':'')+'>UAH</option><option '+(a.customCurrency==='EUR'?'selected':'')+'>EUR</option><option '+(a.customCurrency==='USD'?'selected':'')+'>USD</option></select></div></div></div></div>';
+  const selectedGroup=a.groupId||(member&&member.groupId)||state.groups[0]?.id||'';
+  const groupOptions=state.groups.map(g=>'<option value="'+esc(g.id)+'" '+(g.id===selectedGroup?'selected':'')+'>'+esc(g.name)+'</option>').join('');
+  return'<div class="assignRow"><div class="assignTop"><input type="checkbox" data-as-active="'+esc(s.id)+'" '+(active?'checked':'')+'><div class="assignName">'+esc(s.name)+'</div><div class="small">'+esc(amountText(s.amount,s.currency))+'</div></div><div class="assignOpts '+(active?'':'hidden')+'" data-as-opts="'+esc(s.id)+'"><div class="field"><label>Сімʼя оплати</label><select data-as-group="'+esc(s.id)+'">'+groupOptions+'</select></div><div class="field"><label>Сплачено наперед до</label><input type="month" data-as-prepaid="'+esc(s.id)+'" value="'+esc(a.prepaidUntil||'')+'"></div><div class="field"><label>Як рахувати</label><select data-as-mode="'+esc(s.id)+'"><option value="UAH" '+(mode==='UAH'?'selected':'')+'>У гривні</option><option value="SERVICE" '+(mode==='SERVICE'?'selected':'')+'>У валюті сервісу</option><option value="CUSTOM" '+(mode==='CUSTOM'?'selected':'')+'>Власна сума</option></select></div><div class="field"><label>Власна сума</label><div style="display:grid;grid-template-columns:1fr 82px;gap:5px"><input inputmode="decimal" data-as-custom="'+esc(s.id)+'" value="'+esc(a.customAmount??'')+'"><select data-as-custom-cur="'+esc(s.id)+'"><option '+((a.customCurrency||'UAH')==='UAH'?'selected':'')+'>UAH</option><option '+(a.customCurrency==='EUR'?'selected':'')+'>EUR</option><option '+(a.customCurrency==='USD'?'selected':'')+'>USD</option></select></div></div></div></div>';
  }).join('');
 }
 function openMember(id){
@@ -522,7 +570,7 @@ function openMember(id){
 $('addMemberBtn').addEventListener('click',()=>openMember());
 $('memberForm').addEventListener('submit',e=>{
  e.preventDefault();const assignments={};
- state.services.forEach(s=>{const chk=document.querySelector('[data-as-active="'+s.id+'"]');if(chk&&chk.checked){assignments[s.id]={active:true,prepaidUntil:document.querySelector('[data-as-prepaid="'+s.id+'"]').value,mode:document.querySelector('[data-as-mode="'+s.id+'"]').value,customAmount:document.querySelector('[data-as-custom="'+s.id+'"]').value,customCurrency:document.querySelector('[data-as-custom-cur="'+s.id+'"]').value}}});
+ state.services.forEach(s=>{const chk=document.querySelector('[data-as-active="'+s.id+'"]');if(chk&&chk.checked){assignments[s.id]={active:true,groupId:document.querySelector('[data-as-group="'+s.id+'"]').value,prepaidUntil:document.querySelector('[data-as-prepaid="'+s.id+'"]').value,mode:document.querySelector('[data-as-mode="'+s.id+'"]').value,customAmount:document.querySelector('[data-as-custom="'+s.id+'"]').value,customCurrency:document.querySelector('[data-as-custom-cur="'+s.id+'"]').value}}});
  if(editingMember){const m=state.members.find(x=>x.id===editingMember);Object.assign(m,{name:$('memberName').value.trim(),groupId:$('memberGroup').value,excluded:$('memberExcluded').checked,note:$('memberNote').value.trim(),assignments})}
  else state.members.push({id:uid(),name:$('memberName').value.trim(),groupId:$('memberGroup').value,excluded:$('memberExcluded').checked,note:$('memberNote').value.trim(),assignments,paid:false,debtMonths:0,debt:emptyMoney()});
  save();closeModal('memberModal');render();toast('Учасника збережено');
@@ -535,7 +583,7 @@ function openService(id){
 $('addServiceBtn').addEventListener('click',()=>openService());
 $('serviceForm').addEventListener('submit',e=>{
  e.preventDefault();const data={name:$('serviceName').value.trim(),amount:num($('serviceAmount').value),currency:$('serviceCurrency').value,nextDate:$('serviceDate').value,interval:Number($('serviceInterval').value),capacity:Math.max(1,Number($('serviceCapacity').value)||1)};
- if(editingService){const s=state.services.find(x=>x.id===editingService);const changed=s.amount!==data.amount||s.currency!==data.currency;s.name=data.name;s.amount=data.amount;s.currency=data.currency;s.nextDate=data.nextDate;s.interval=data.interval;s.capacity=data.capacity;if(changed)s.priceChanged=true}
+ if(editingService){const s=state.services.find(x=>x.id===editingService);const changed=s.amount!==data.amount||s.currency!==data.currency;if(changed){s.previousPrice={amount:s.amount,currency:s.currency,changedAt:new Date().toISOString()};s.priceChanged=true}s.name=data.name;s.amount=data.amount;s.currency=data.currency;s.nextDate=data.nextDate;s.interval=data.interval;s.capacity=data.capacity}
  else state.services.push({id:uid(),...data,priceChanged:false});
  save();closeModal('serviceModal');render();toast('Сервіс збережено');
 });
@@ -698,7 +746,7 @@ $('logoutBtn').addEventListener('click',async()=>{
 });
 load();
 tryExistingSession();
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=9').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=10').catch(()=>{}));
 })();
 </script>
 </body>
