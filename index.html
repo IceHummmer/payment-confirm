@@ -541,10 +541,106 @@ function renderArchive(){
 }
 function renderSettings(){
  $('cycleInput').value=state.cycle;$('billingDay').value=state.billingDay;$('usdInput').value=state.rates.static.USD;$('eurInput').value=state.rates.static.EUR;
- $('groupSettings').innerHTML=state.groups.map((g,i)=>'<div class="settingsGroup"><div class="formGrid"><div class="field"><label>Назва групи</label><input data-group-name="'+i+'" value="'+esc(g.name)+'"></div><div class="field"><label>Імʼя власника картки</label><input data-group-holder="'+i+'" value="'+esc(g.cardHolder||'')+'"></div><div class="field full"><label>Номер картки</label><input inputmode="numeric" data-group-card="'+i+'" value="'+esc(g.cardNumber||'')+'" placeholder="Зберігається тільки на цьому пристрої"></div></div><button class="btn danger smallBtn" data-delete-group="'+i+'" style="margin-top:8px" '+(state.groups.length===1?'disabled':'')+'>Видалити групу</button></div>').join('');
+ $('groupSettings').innerHTML=state.groups.map((g,i)=>'<div class="settingsGroup"><div class="formGrid"><div class="field"><label>Назва групи</label><input data-group-name="'+i+'" value="'+esc(g.name)+'"></div><div class="field"><label>Імʼя власника картки</label><input data-group-holder="'+i+'" value="'+esc(g.cardHolder||'')+'"></div><div class="field full"><label>Номер картки</label><input inputmode="numeric" data-group-card="'+i+'" value="'+esc(g.cardNumber||'')+'" placeholder="Зберігається у приватному сховищі"></div></div><button class="btn danger smallBtn" data-delete-group="'+i+'" style="margin-top:8px" '+(state.groups.length===1?'disabled':'')+'>Видалити групу</button></div>').join('');
  document.querySelectorAll('[data-delete-group]').forEach(b=>b.addEventListener('click',()=>{const i=Number(b.dataset.deleteGroup),g=state.groups[i];if(confirm('Видалити групу «'+g.name+'»?')){const fallback=state.groups.find((_,x)=>x!==i);state.members.forEach(m=>{if(m.groupId===g.id)m.groupId=fallback.id;Object.values(m.assignments||{}).forEach(a=>{if(a.groupId===g.id)a.groupId=fallback.id})});state.groups.splice(i,1);save();renderSettings();toast('Групу видалено')}}));
 }
-function render(){ $('today').textContent=new Intl.DateTimeFormat('uk-UA',{day:'2-digit',month:'long',year:'numeric'}).format(today());renderDashboard();renderMembers();renderServices();renderArchive();renderSettings();renderNav() }
+let currentInviteLink='';
+
+async function refreshCloudState(showToast=false){
+ try{
+   setCloudStatus('Оновлення…');
+   const doc=await api('/api/state');
+   if(doc&&doc.state){
+     state=normalizeState(doc.state);
+     cloudReady=true;
+     render();
+     setCloudStatus('Завантажено з хмари');
+     if(showToast)toast('Дані оновлено');
+   }
+ }catch(e){
+   setCloudStatus('Помилка синхронізації');
+   if(showToast)toast('Не вдалося оновити дані');
+ }
+}
+
+function historyLabel(type){
+ return ({
+   self_mark_paid:'Учасник відмітив оплату',
+   admin_mark_paid:'Адміністратор відмітив оплату',
+   admin_unmark_paid:'Позначку оплати знято',
+   archive:'Закритий місяць'
+ })[type]||type||'Подія';
+}
+
+async function renderAccess(){
+ if(!$('accessList'))return;
+ $('accessList').innerHTML='<div class="empty">Завантаження…</div>';
+ try{
+   const data=await api('/api/admin/access');
+   const members=data.members||[];
+   if(!members.length){$('accessList').innerHTML='<div class="empty">Учасників поки немає.</div>';return}
+   $('accessList').innerHTML=members.map(x=>
+     '<div class="accessRow"><div class="accessTop"><div><div class="rowTitle">'+esc(x.name)+'</div>'+
+     '<div class="rowMeta"><span class="statusDot '+(x.activeDevices?'on':'')+'"></span>'+
+     (x.activeDevices?('Активних пристроїв: '+x.activeDevices):'Доступ ще не активовано')+
+     (x.pushEnabled?' · push увімкнено':'')+
+     (x.lastAccessAt?' · останній доступ '+new Intl.DateTimeFormat('uk-UA',{dateStyle:'short',timeStyle:'short'}).format(new Date(x.lastAccessAt)):'')+
+     '</div></div><div class="rowActions">'+
+     '<button class="btn secondary smallBtn" data-invite-member="'+esc(x.memberId)+'">Створити запрошення</button>'+
+     (x.activeDevices?'<button class="btn danger smallBtn" data-revoke-member="'+esc(x.memberId)+'">Скасувати доступ</button>':'')+
+     '</div></div></div>'
+   ).join('');
+   document.querySelectorAll('[data-invite-member]').forEach(b=>b.addEventListener('click',async()=>{
+     const member=state.members.find(m=>m.id===b.dataset.inviteMember);
+     b.disabled=true;
+     try{
+       const data=await api('/api/admin/invites',{method:'POST',body:JSON.stringify({memberId:b.dataset.inviteMember})});
+       currentInviteLink=data.inviteUrl;
+       $('inviteMemberName').textContent=member?member.name:'';
+       $('inviteLink').textContent=currentInviteLink;
+       openModal('inviteModal');
+       renderAccess();
+     }catch(e){toast('Не вдалося створити запрошення')}
+     finally{b.disabled=false}
+   }));
+   document.querySelectorAll('[data-revoke-member]').forEach(b=>b.addEventListener('click',async()=>{
+     const member=state.members.find(m=>m.id===b.dataset.revokeMember);
+     if(!confirm('Скасувати доступ для '+(member?member.name:'учасника')+'?'))return;
+     try{
+       await api('/api/admin/access/revoke',{method:'POST',body:JSON.stringify({memberId:b.dataset.revokeMember})});
+       toast('Доступ скасовано');renderAccess();
+     }catch(e){toast('Не вдалося скасувати доступ')}
+   }));
+ }catch(e){
+   $('accessList').innerHTML='<div class="empty">Не вдалося завантажити доступи.</div>';
+ }
+}
+
+async function renderHistory(){
+ if(!$('historyList'))return;
+ $('historyList').innerHTML='<div class="empty">Завантаження…</div>';
+ try{
+   const data=await api('/api/admin/history');
+   const items=data.items||[];
+   if(!items.length){$('historyList').innerHTML='<div class="empty">Історія поки порожня.</div>';return}
+   $('historyList').innerHTML=items.map(x=>
+     '<div class="historyItem"><div class="historyType">'+esc(x.name)+' · '+esc(historyLabel(x.type))+'</div>'+
+     '<div class="rowMeta">'+esc(x.cycle||'')+
+     (x.amount&&hasMoney(x.amount)?' · '+esc(formatMoneySet(x.amount)):'')+
+     (x.at?' · '+new Intl.DateTimeFormat('uk-UA',{dateStyle:'short',timeStyle:'short'}).format(new Date(x.at)):'')+
+     '</div></div>'
+   ).join('');
+ }catch(e){
+   $('historyList').innerHTML='<div class="empty">Не вдалося завантажити історію.</div>';
+ }
+}
+
+function render(){
+ $('today').textContent=new Intl.DateTimeFormat('uk-UA',{day:'2-digit',month:'long',year:'numeric'}).format(today());
+ renderDashboard();renderMembers();renderServices();renderArchive();renderSettings();renderNav();
+ if(activeView==='access')renderAccess();
+ if(activeView==='history')renderHistory();
+}
 
 function assignmentHtml(member){
  return state.services.map(s=>{
@@ -655,6 +751,14 @@ function showMessages(){
  openModal('messagesModal');
 }
 $('copyMessagesBtn').addEventListener('click',showMessages);
+$('refreshCloudBtn').addEventListener('click',()=>refreshCloudState(true));
+$('refreshAccessBtn').addEventListener('click',renderAccess);
+$('refreshHistoryBtn').addEventListener('click',renderHistory);
+$('copyInviteBtn').addEventListener('click',async()=>{
+ if(!currentInviteLink)return;
+ try{await navigator.clipboard.writeText(currentInviteLink);toast('Посилання скопійовано')}
+ catch(e){toast('Не вдалося скопіювати')}
+});
 
 $('closeMonthBtn').addEventListener('click',()=>openModal('closeModal'));
 $('confirmCloseMonth').addEventListener('click',()=>{
@@ -746,6 +850,9 @@ $('logoutBtn').addEventListener('click',async()=>{
 });
 load();
 tryExistingSession();
+setInterval(()=>{
+ if(document.body.classList.contains('authenticated')&&!document.querySelector('.modalBack.show')) refreshCloudState(false);
+},45000);
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=10').catch(()=>{}));
 })();
 </script>
