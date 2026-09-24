@@ -505,11 +505,16 @@ function renderDashboard(){
  $('awaitingAmount').textContent=awaitingUAH?amountText(awaitingUAH,'UAH'):'';
  $('debtCount').textContent=state.members.filter(m=>m.debtMonths>0).length;
  $('serviceCount').textContent=state.services.length;
- const upcoming=[...state.services].filter(s=>s.nextDate).sort((a,b)=>String(a.nextDate).localeCompare(String(b.nextDate))).slice(0,3);
- const attention=[];
- awaiting.slice(0,5).forEach(m=>attention.push('<div class="attentionItem"><div class="attentionTop"><div><div class="rowTitle">'+esc(m.name)+'</div><div class="rowMeta">Очікується оплата</div></div><div class="attentionAmount">'+esc(formatMoneySet(totalDue(m)))+'</div></div></div>'));
- upcoming.forEach(s=>attention.push('<div class="attentionItem"><div class="attentionTop"><div><div class="rowTitle">'+esc(s.name)+'</div><div class="rowMeta">Наступне списання '+esc(formatDate(s.nextDate))+(s.priceChanged?' · ціна змінена ‼️':'')+'</div></div></div></div>'));
- $('attentionList').innerHTML=attention.join('')||'<div class="empty">Нічого термінового.</div>';
+ const attentionMembers=state.members
+   .filter(m=>(!m.paid&&hasMoney(totalDue(m)))||m.debtMonths>0)
+   .sort((a,b)=>(b.debtMonths||0)-(a.debtMonths||0)||compareMembersBySurname(a,b));
+ const attention=attentionMembers.map(m=>{
+   const meta=[];
+   if(!m.paid&&hasMoney(currentDue(m)))meta.push('Очікується оплата');
+   if(m.debtMonths>0)meta.push(debtMonthsText(m.debtMonths));
+   return '<div class="attentionItem"><div class="attentionTop"><div><div class="rowTitle">'+esc(m.name)+'</div><div class="rowMeta">'+esc(meta.join(' · '))+'</div></div><div class="attentionAmount">'+esc(formatMoneySet(totalDue(m)))+'</div></div></div>';
+ });
+ $('attentionList').innerHTML=attention.join('')||'<div class="empty">Усі оплатили, боргів немає.</div>';
  if(!state.members.length){$('paymentList').innerHTML='<div class="empty">Додайте учасників у розділі «Учасники».</div>';return}
  const groups=new Map(state.groups.map(g=>[g.id,g.name]));
  const ordered=[...state.members].sort((a,b)=>(groups.get(a.groupId)||'').localeCompare(groups.get(b.groupId)||'','uk',{sensitivity:'base'})||compareMembersBySurname(a,b));
@@ -951,7 +956,7 @@ tryExistingSession();
 setInterval(()=>{
  if(document.body.classList.contains('authenticated')&&!document.querySelector('.modalBack.show')) refreshCloudState(false);
 },45000);
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=14').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=15').catch(()=>{}));
 })();
 </script>
 </body>
