@@ -1,4 +1,4 @@
-const CACHE='payment-confirm-v12';
+const CACHE='payment-confirm-v13';
 const ASSETS=['./','./index.html','./member.html','./manifest.webmanifest','./member.webmanifest','./icon.svg'];
 
 self.addEventListener('install',e=>{
@@ -28,32 +28,4 @@ self.addEventListener('fetch',e=>{
   caches.open(CACHE).then(c=>c.put(e.request,copy));
   return res;
  }).catch(()=>caches.match(e.request)));
-});
-
-self.addEventListener('push',event=>{
- let data={};
- try{data=event.data?event.data.json():{}}catch(e){data={body:event.data?event.data.text():'Нове нагадування'}}
- const title=data.title||'Контроль оплат';
- const options={
-   body:data.body||'Перевірте поточну оплату.',
-   icon:'./icon.svg',
-   badge:'./icon.svg',
-   tag:data.tag||'payment-confirm',
-   data:{url:data.url||'./member.html'}
- };
- event.waitUntil(self.registration.showNotification(title,options));
-});
-
-self.addEventListener('notificationclick',event=>{
- event.notification.close();
- const target=event.notification.data&&event.notification.data.url?event.notification.data.url:'./member.html';
- event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{
-   for(const client of list){
-     if('focus'in client&&client.url.includes('/member.html')){
-       client.navigate(target);
-       return client.focus();
-     }
-   }
-   return clients.openWindow?clients.openWindow(target):undefined;
- }));
 });
