@@ -63,6 +63,7 @@ body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}button{curso
     <div class="small">Push-нагадування надходитимуть перед днем оплати, у день оплати та якщо оплата ще очікується. На iPhone push працює для сайту, доданого на головний екран.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
       <button class="btn" id="enablePushBtn">Увімкнути push</button>
+      <button class="btn secondary hidden" id="testPushBtn">Тест push</button>
       <button class="btn secondary hidden" id="disablePushBtn">Вимкнути</button>
     </div>
     <div class="small" id="pushStatus" style="margin-top:8px"></div>
@@ -81,6 +82,8 @@ const API='https://payment-confirm-api.onrender.com';
 const TOKEN_KEY='payment-confirm-member-token';
 let memberToken=localStorage.getItem(TOKEN_KEY)||'';
 let current=null;
+const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
 const $=id=>document.getElementById(id);
 const num=v=>{const n=parseFloat(String(v??'').replace(/\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0};
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -199,32 +202,90 @@ function urlBase64ToUint8Array(base64String){
 }
 
 async function updatePushUi(){
- if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window)){
-   $('pushStatus').textContent='Push не підтримується цим браузером.';
-   $('enablePushBtn').disabled=true;return;
+ const supported=('serviceWorker'in navigator)&&('PushManager'in window)&&('Notification'in window);
+
+ if(isIOS&&!isStandalone){
+   $('enablePushBtn').disabled=true;
+   $('enablePushBtn').classList.remove('hidden');
+   $('disablePushBtn').classList.add('hidden');
+   $('testPushBtn').classList.add('hidden');
+   $('pushStatus').innerHTML='На iPhone/iPad Web Push працює тільки для вебзастосунку, доданого на головний екран. Відкрийте меню «Поділитися» → «На початковий екран», потім запустіть застосунок з іконки та увімкніть push.';
+   return;
  }
+
+ if(!supported){
+   $('enablePushBtn').disabled=true;
+   $('enablePushBtn').classList.remove('hidden');
+   $('disablePushBtn').classList.add('hidden');
+   $('testPushBtn').classList.add('hidden');
+   $('pushStatus').textContent='Цей браузер не надає Web Push для цього режиму.';
+   return;
+ }
+
+ if(Notification.permission==='denied'){
+   $('enablePushBtn').disabled=true;
+   $('enablePushBtn').classList.remove('hidden');
+   $('disablePushBtn').classList.add('hidden');
+   $('testPushBtn').classList.add('hidden');
+   $('pushStatus').innerHTML='Сповіщення заблоковані в налаштуваннях браузера. Дозвольте Notifications/Сповіщення для payment-confirm.onrender.com. У Windows також перевірте Settings → System → Notifications і дозвіл для вашого браузера.';
+   return;
+ }
+
  try{
    const reg=await navigator.serviceWorker.ready;
    const sub=await reg.pushManager.getSubscription();
+   $('enablePushBtn').disabled=false;
    $('enablePushBtn').classList.toggle('hidden',!!sub);
    $('disablePushBtn').classList.toggle('hidden',!sub);
-   $('pushStatus').textContent=sub?'Push-нагадування увімкнені.':'Push-нагадування вимкнені.';
- }catch(e){}
+   $('testPushBtn').classList.toggle('hidden',!sub);
+   if(sub){
+     $('pushStatus').textContent='Push-нагадування увімкнені. Натисніть «Тест push», щоб перевірити доставку.';
+   }else if(Notification.permission==='granted'){
+     $('pushStatus').textContent='Дозвіл на сповіщення є, але push ще не підключено.';
+   }else{
+     $('pushStatus').textContent='Натисніть «Увімкнути push» і дозвольте сповіщення у системному вікні.';
+   }
+ }catch(e){
+   $('pushStatus').textContent='Не вдалося перевірити стан push. Оновіть сторінку та спробуйте ще раз.';
+ }
 }
 
 $('enablePushBtn').addEventListener('click',async()=>{
  try{
+   if(isIOS&&!isStandalone){updatePushUi();return}
+   if(!('Notification'in window)){updatePushUi();return}
+   if(Notification.permission==='denied'){updatePushUi();return}
    if(Notification.permission!=='granted'){
      const permission=await Notification.requestPermission();
-     if(permission!=='granted'){toast('Дозвіл на сповіщення не надано');return}
+     if(permission!=='granted'){updatePushUi();return}
    }
    const keyData=await api('/api/push/public-key',{},false);
    if(!keyData.configured||!keyData.publicKey){toast('Push ще не налаштований на сервері');return}
    const reg=await navigator.serviceWorker.ready;
-   const subscription=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(keyData.publicKey)});
+   const existing=await reg.pushManager.getSubscription();
+   const subscription=existing||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(keyData.publicKey)});
    await api('/api/member/push',{method:'POST',body:JSON.stringify({subscription})});
-   toast('Push-нагадування увімкнено');updatePushUi();
- }catch(e){console.error(e);toast('Не вдалося увімкнути push')}
+   toast('Push-нагадування увімкнено');await updatePushUi();
+ }catch(e){
+   console.error(e);
+   $('pushStatus').textContent='Не вдалося підключити push: '+(e&&e.name?e.name:'помилка браузера')+'.';
+   toast('Не вдалося увімкнути push');
+ }
+});
+
+$('testPushBtn').addEventListener('click',async()=>{
+ $('testPushBtn').disabled=true;
+ try{
+   await api('/api/member/push/test',{method:'POST'});
+   toast('Тестове push відправлено');
+   $('pushStatus').textContent='Тестове сповіщення відправлено. Якщо його не видно, перевірте системні дозволи та режим «Не турбувати».';
+ }catch(e){
+   console.error(e);
+   toast('Тест push не доставлено');
+   $('pushStatus').textContent=e.code==='NO_SUBSCRIPTION'
+     ?'Push-підписка не знайдена. Вимкніть і знову увімкніть push.'
+     :'Сервер не зміг відправити тестове сповіщення.';
+ }finally{$('testPushBtn').disabled=false}
 });
 
 $('disablePushBtn').addEventListener('click',async()=>{
@@ -240,7 +301,7 @@ $('disablePushBtn').addEventListener('click',async()=>{
 });
 
 const invite=new URLSearchParams(location.search).get('invite');
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=11').catch(()=>{});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=12').catch(()=>{});
 if(invite){
  $('gateTitle').textContent='Персональне запрошення';
  $('gateText').textContent='Після активації цей пристрій отримає доступ тільки до ваших підписок, сум та історії оплат.';
