@@ -104,6 +104,9 @@ async function api(path,options={},withAuth=true){
 function historyLabel(x){
  return ({
    self_mark_paid:'Я відмітив оплату',
+   payment_claim_submitted:'Я повідомив про оплату',
+   admin_confirm_paid:'Адміністратор підтвердив оплату',
+   admin_reject_payment:'Адміністратор відхилив підтвердження',
    admin_mark_paid:'Оплату підтверджено',
    admin_unmark_paid:'Позначку оплати знято',
    archive:x.paid?'Місяць оплачено':'Місяць закрито без оплати'
@@ -124,9 +127,14 @@ function render(){
  $('memberName').textContent=m.name;
  $('cycleLabel').textContent='Період: '+monthLabel(m.cycle)+' · день оплати '+String(m.billingDay).padStart(2,'0');
  $('totalDue').textContent=moneyText(m.totalDue);
- $('paymentStatus').innerHTML=m.paid?'<span class="chip good">Оплачено ✓</span>':'<span class="chip warn">Очікується</span>';
- $('paidBtn').disabled=!!m.paid;
- $('paidBtn').textContent=m.paid?'Оплату відмічено ✓':'Я оплатив';
+ const claimPending=!!(m.paymentClaim&&m.paymentClaim.status==='pending');
+ $('paymentStatus').innerHTML=m.paid
+   ?'<span class="chip good">Оплачено ✓</span>'
+   :claimPending
+     ?'<span class="chip warn">Очікує підтвердження адміністратора</span>'
+     :'<span class="chip warn">Очікується оплата</span>';
+ $('paidBtn').disabled=!!m.paid||claimPending;
+ $('paidBtn').textContent=m.paid?'Оплату підтверджено ✓':claimPending?'Очікує підтвердження…':'Я оплатив';
  $('debtNote').textContent=m.debtMonths?('Є борг за '+m.debtMonths+' міс.'):'';
 
  const changed=m.services.filter(s=>s.priceChanged);
@@ -170,13 +178,13 @@ async function loadMe(){
 }
 
 $('paidBtn').addEventListener('click',async()=>{
- if(!current||current.paid)return;
- if(!confirm('Відмітити оплату за поточний період?'))return;
+ if(!current||current.paid||(current.paymentClaim&&current.paymentClaim.status==='pending'))return;
+ if(!confirm('Повідомити адміністратора, що ви оплатили поточний період?'))return;
  $('paidBtn').disabled=true;
  try{
    const data=await api('/api/member/paid',{method:'POST'});
-   current=data.member;render();toast('Оплату відмічено');
- }catch(e){toast('Не вдалося відмітити оплату');$('paidBtn').disabled=false}
+   current=data.member;render();toast('Заявку на підтвердження надіслано');
+ }catch(e){toast('Не вдалося надіслати підтвердження');$('paidBtn').disabled=false}
 });
 
 $('logoutBtn').addEventListener('click',()=>{
@@ -232,7 +240,7 @@ $('disablePushBtn').addEventListener('click',async()=>{
 });
 
 const invite=new URLSearchParams(location.search).get('invite');
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=10').catch(()=>{});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=11').catch(()=>{});
 if(invite){
  $('gateTitle').textContent='Персональне запрошення';
  $('gateText').textContent='Після активації цей пристрій отримає доступ тільки до ваших підписок, сум та історії оплат.';
