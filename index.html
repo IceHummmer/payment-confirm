@@ -204,6 +204,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 <div class="formGrid">
 <div class="field"><label>Імʼя Прізвище</label><input id="memberName" required maxlength="80"></div>
 <div class="field"><label>Основна сімʼя</label><select id="memberGroup"></select></div>
+<div class="field full"><label>E-mail для нагадувань</label><input id="memberEmail" type="email" autocomplete="email" maxlength="160" placeholder="name@example.com"></div>
 <div class="field full"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="memberExcluded" style="width:20px;height:20px;min-height:0"> Не включати до повідомлення про оплату</label></div>
 <div class="field full"><label>Примітка</label><input id="memberNote" maxlength="120"></div>
 </div>
@@ -591,7 +592,7 @@ async function renderAccess(){
      '<div class="accessRow"><div class="accessTop"><div><div class="rowTitle">'+esc(x.name)+'</div>'+
      '<div class="rowMeta"><span class="statusDot '+(x.activeDevices?'on':'')+'"></span>'+
      (x.activeDevices?('Активних пристроїв: '+x.activeDevices):'Доступ ще не активовано')+
-     (x.pushEnabled?' · push увімкнено':'')+
+     (x.email?' · e-mail: '+esc(x.email):' · e-mail не вказано')+
      (x.lastAccessAt?' · останній доступ '+new Intl.DateTimeFormat('uk-UA',{dateStyle:'short',timeStyle:'short'}).format(new Date(x.lastAccessAt)):'')+
      '</div></div><div class="rowActions">'+
      '<button class="btn secondary smallBtn" data-invite-member="'+esc(x.memberId)+'">Створити запрошення</button>'+
@@ -701,7 +702,7 @@ function assignmentHtml(member){
 function openMember(id){
  editingMember=id||null;const m=id?state.members.find(x=>x.id===id):null;
  $('memberModalTitle').textContent=m?'Редагувати учасника':'Новий учасник';
- $('memberName').value=m?m.name:'';$('memberExcluded').checked=!!(m&&m.excluded);$('memberNote').value=m?m.note||'':'';
+ $('memberName').value=m?m.name:'';$('memberEmail').value=m?m.email||'':'';$('memberExcluded').checked=!!(m&&m.excluded);$('memberNote').value=m?m.note||'':'';
  $('memberGroup').innerHTML=state.groups.map(g=>'<option value="'+esc(g.id)+'">'+esc(g.name)+'</option>').join('');
  if(!state.groups.length){toast('Спочатку додайте групу в налаштуваннях');return}
  $('memberGroup').value=m?m.groupId:state.groups[0].id;
@@ -713,8 +714,8 @@ $('addMemberBtn').addEventListener('click',()=>openMember());
 $('memberForm').addEventListener('submit',e=>{
  e.preventDefault();const assignments={};
  state.services.forEach(s=>{const chk=document.querySelector('[data-as-active="'+s.id+'"]');if(chk&&chk.checked){assignments[s.id]={active:true,groupId:document.querySelector('[data-as-group="'+s.id+'"]').value,prepaidUntil:document.querySelector('[data-as-prepaid="'+s.id+'"]').value,mode:document.querySelector('[data-as-mode="'+s.id+'"]').value,customAmount:document.querySelector('[data-as-custom="'+s.id+'"]').value,customCurrency:document.querySelector('[data-as-custom-cur="'+s.id+'"]').value}}});
- if(editingMember){const m=state.members.find(x=>x.id===editingMember);Object.assign(m,{name:$('memberName').value.trim(),groupId:$('memberGroup').value,excluded:$('memberExcluded').checked,note:$('memberNote').value.trim(),assignments})}
- else state.members.push({id:uid(),name:$('memberName').value.trim(),groupId:$('memberGroup').value,excluded:$('memberExcluded').checked,note:$('memberNote').value.trim(),assignments,paid:false,debtMonths:0,debt:emptyMoney()});
+ if(editingMember){const m=state.members.find(x=>x.id===editingMember);Object.assign(m,{name:$('memberName').value.trim(),email:$('memberEmail').value.trim(),groupId:$('memberGroup').value,excluded:$('memberExcluded').checked,note:$('memberNote').value.trim(),assignments})}
+ else state.members.push({id:uid(),name:$('memberName').value.trim(),email:$('memberEmail').value.trim(),groupId:$('memberGroup').value,excluded:$('memberExcluded').checked,note:$('memberNote').value.trim(),assignments,paid:false,debtMonths:0,debt:emptyMoney()});
  save();closeModal('memberModal');render();toast('Учасника збережено');
 });
 
@@ -900,7 +901,7 @@ tryExistingSession();
 setInterval(()=>{
  if(document.body.classList.contains('authenticated')&&!document.querySelector('.modalBack.show')) refreshCloudState(false);
 },45000);
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=11').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=13').catch(()=>{}));
 })();
 </script>
 </body>
