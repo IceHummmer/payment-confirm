@@ -1,5 +1,5 @@
 const CACHE='payment-confirm-v10';
-const ASSETS=['./','./index.html','./member.html','./manifest.webmanifest','./icon.svg'];
+const ASSETS=['./','./index.html','./member.html','./manifest.webmanifest','./member.webmanifest','./icon.svg'];
 
 self.addEventListener('install',e=>{
  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
