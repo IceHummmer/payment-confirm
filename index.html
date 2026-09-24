@@ -153,8 +153,24 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 
 <section class="view" id="view-history">
 <div class="card">
-<div class="sectionHead"><h2>Історія оплат</h2><button class="btn secondary smallBtn" id="refreshHistoryBtn">Оновити</button></div>
+<div class="sectionHead">
+  <h2>Історія оплат</h2>
+  <div class="rowActions">
+    <button class="btn secondary smallBtn" id="refreshHistoryBtn">Оновити</button>
+    <button class="btn danger smallBtn" id="clearPaymentHistoryBtn">Очистити</button>
+  </div>
+</div>
+<div class="small" style="margin-bottom:8px">Очищення видаляє журнал подій оплат. Архів закритих місяців залишається окремо.</div>
 <div id="historyList"></div>
+</div>
+
+<div class="card section">
+<div class="sectionHead">
+  <h2>Історія зміни цін</h2>
+  <button class="btn danger smallBtn" id="clearPriceHistoryBtn">Очистити</button>
+</div>
+<div class="small" style="margin-bottom:8px">Тут фіксуються тільки зміни вартості або валюти сервісу, зроблені адміністратором.</div>
+<div id="priceHistoryList"></div>
 </div>
 </section>
 
@@ -663,21 +679,53 @@ async function resolvePaymentClaim(claimId,action){
 }
 
 async function renderHistory(){
- if(!$('historyList'))return;
+ if(!$('historyList')||!$('priceHistoryList'))return;
  $('historyList').innerHTML='<div class="empty">Завантаження…</div>';
+ $('priceHistoryList').innerHTML='<div class="empty">Завантаження…</div>';
  try{
    const data=await api('/api/admin/history');
-   const items=data.items||[];
-   if(!items.length){$('historyList').innerHTML='<div class="empty">Історія поки порожня.</div>';return}
-   $('historyList').innerHTML=items.map(x=>
-     '<div class="historyItem"><div class="historyType">'+esc(x.name)+' · '+esc(historyLabel(x.type))+'</div>'+
-     '<div class="rowMeta">'+esc(x.cycle||'')+
-     (x.amount&&hasMoney(x.amount)?' · '+esc(formatMoneySet(x.amount)):'')+
-     (x.at?' · '+new Intl.DateTimeFormat('uk-UA',{dateStyle:'short',timeStyle:'short'}).format(new Date(x.at)):'')+
-     '</div></div>'
-   ).join('');
+   const payments=data.payments||data.items||[];
+   const prices=data.prices||[];
+
+   $('historyList').innerHTML=payments.length
+     ?payments.map(x=>
+       '<div class="historyItem"><div class="historyType">'+esc(x.name)+' · '+esc(historyLabel(x.type))+'</div>'+
+       '<div class="rowMeta">'+esc(x.cycle||'')+
+       (x.amount&&hasMoney(x.amount)?' · '+esc(formatMoneySet(x.amount)):'')+
+       (x.at?' · '+new Intl.DateTimeFormat('uk-UA',{dateStyle:'short',timeStyle:'short'}).format(new Date(x.at)):'')+
+       '</div></div>'
+     ).join('')
+     :'<div class="empty">Історія оплат поки порожня.</div>';
+
+   $('priceHistoryList').innerHTML=prices.length
+     ?prices.map(x=>{
+       const oldText=x.oldPrice?amountText(x.oldPrice.amount,x.oldPrice.currency):'—';
+       const newText=x.newPrice?amountText(x.newPrice.amount,x.newPrice.currency):'—';
+       return '<div class="historyItem"><div class="historyType">'+esc(x.serviceName||'Сервіс')+'</div>'+
+         '<div class="rowMeta">'+esc(oldText)+' → '+esc(newText)+
+         (x.cycle?' · '+esc(x.cycle):'')+
+         (x.at?' · '+new Intl.DateTimeFormat('uk-UA',{dateStyle:'short',timeStyle:'short'}).format(new Date(x.at)):'')+
+         '</div></div>';
+     }).join('')
+     :'<div class="empty">Змін цін поки не було.</div>';
  }catch(e){
-   $('historyList').innerHTML='<div class="empty">Не вдалося завантажити історію.</div>';
+   $('historyList').innerHTML='<div class="empty">Не вдалося завантажити історію оплат.</div>';
+   $('priceHistoryList').innerHTML='<div class="empty">Не вдалося завантажити історію цін.</div>';
+ }
+}
+
+async function clearAdminHistory(type){
+ const isPayments=type==='payments';
+ const message=isPayments
+   ?'Очистити всю історію оплат? Архів закритих місяців не буде видалено.'
+   :'Очистити всю історію зміни цін?';
+ if(!confirm(message))return;
+ try{
+   await api('/api/admin/history?type='+encodeURIComponent(type),{method:'DELETE'});
+   toast(isPayments?'Історію оплат очищено':'Історію цін очищено');
+   await renderHistory();
+ }catch(e){
+   toast('Не вдалося очистити історію');
  }
 }
 
@@ -802,6 +850,8 @@ $('refreshCloudBtn').addEventListener('click',()=>refreshCloudState(true));
 $('refreshClaimsBtn').addEventListener('click',renderPaymentClaims);
 $('refreshAccessBtn').addEventListener('click',renderAccess);
 $('refreshHistoryBtn').addEventListener('click',renderHistory);
+$('clearPaymentHistoryBtn').addEventListener('click',()=>clearAdminHistory('payments'));
+$('clearPriceHistoryBtn').addEventListener('click',()=>clearAdminHistory('prices'));
 $('copyInviteBtn').addEventListener('click',async()=>{
  if(!currentInviteLink)return;
  try{await navigator.clipboard.writeText(currentInviteLink);toast('Посилання скопійовано')}
@@ -901,7 +951,7 @@ tryExistingSession();
 setInterval(()=>{
  if(document.body.classList.contains('authenticated')&&!document.querySelector('.modalBack.show')) refreshCloudState(false);
 },45000);
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=13').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=14').catch(()=>{}));
 })();
 </script>
 </body>
