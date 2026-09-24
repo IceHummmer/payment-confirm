@@ -14,7 +14,7 @@
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
 body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}button{cursor:pointer}.app{max-width:720px;margin:0 auto;padding:18px 12px 50px}
 .hero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:3px 0 14px}.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:750}h1{font-size:26px;letter-spacing:-.03em;margin:4px 0 0}
-.card{background:#fff;border:1px solid var(--line);border-radius:19px;padding:16px;box-shadow:var(--shadow);margin-top:11px}.small{font-size:12px;color:var(--muted);line-height:1.45}.metric{font-size:30px;font-weight:820;letter-spacing:-.035em}.btn{border:0;border-radius:12px;min-height:44px;padding:10px 14px;background:var(--green);color:#fff;font-weight:760;font-size:15px}.btn.secondary{background:var(--soft);color:var(--text);border:1px solid var(--line)}.btn:disabled{opacity:.5}.full{width:100%}
+.card{background:#fff;border:1px solid var(--line);border-radius:19px;padding:16px;box-shadow:var(--shadow);margin-top:11px}input{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;min-height:44px;padding:10px 12px;font:inherit;color:var(--text);outline:none}input:focus{border-color:#9bb5aa;box-shadow:0 0 0 3px rgba(36,93,73,.08)}.small{font-size:12px;color:var(--muted);line-height:1.45}.metric{font-size:30px;font-weight:820;letter-spacing:-.035em}.btn{border:0;border-radius:12px;min-height:44px;padding:10px 14px;background:var(--green);color:#fff;font-weight:760;font-size:15px}.btn.secondary{background:var(--soft);color:var(--text);border:1px solid var(--line)}.btn:disabled{opacity:.5}.full{width:100%}
 .row{padding:11px 0;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.rowTitle{font-weight:760}.rowMeta{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45}.between{display:flex;justify-content:space-between;align-items:center;gap:12px}.amount{font-weight:800;white-space:nowrap}.chip{display:inline-flex;font-size:11px;padding:4px 7px;border-radius:999px;background:var(--soft);color:var(--muted);margin:4px 4px 0 0}.chip.good{background:var(--greenSoft);color:var(--green)}.chip.warn{background:var(--amberSoft);color:var(--amber)}
 .notice{padding:11px 12px;border-radius:12px;background:var(--greenSoft);color:var(--green);font-size:13px;line-height:1.5}.notice.warn{background:var(--amberSoft);color:var(--amber)}
 .cardNumber{font-size:18px;font-weight:780;letter-spacing:.03em;margin-top:8px;word-break:break-all}.sectionTitle{font-size:18px;font-weight:800;margin:0 0 8px}
@@ -59,14 +59,16 @@ body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}button{curso
   </div>
 
   <div class="card">
-    <div class="sectionTitle">Нагадування</div>
-    <div class="small">Push-нагадування надходитимуть перед днем оплати, у день оплати та якщо оплата ще очікується. На iPhone push працює для сайту, доданого на головний екран.</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-      <button class="btn" id="enablePushBtn">Увімкнути push</button>
-      <button class="btn secondary hidden" id="testPushBtn">Тест push</button>
-      <button class="btn secondary hidden" id="disablePushBtn">Вимкнути</button>
+    <div class="sectionTitle">Нагадування на e-mail</div>
+    <div class="small">Вкажіть адресу, на яку надсилати нагадування про оплату. Адміністратор також може змінити цю адресу у вашій картці.</div>
+    <div style="margin-top:12px">
+      <input id="emailInput" type="email" autocomplete="email" maxlength="160" placeholder="name@example.com">
     </div>
-    <div class="small" id="pushStatus" style="margin-top:8px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button class="btn" id="saveEmailBtn">Зберегти e-mail</button>
+      <button class="btn secondary" id="testEmailBtn">Надіслати тест</button>
+    </div>
+    <div class="small" id="emailStatus" style="margin-top:8px"></div>
   </div>
 
   <div class="card">
@@ -82,8 +84,6 @@ const API='https://payment-confirm-api.onrender.com';
 const TOKEN_KEY='payment-confirm-member-token';
 let memberToken=localStorage.getItem(TOKEN_KEY)||'';
 let current=null;
-const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-const isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
 const $=id=>document.getElementById(id);
 const num=v=>{const n=parseFloat(String(v??'').replace(/\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0};
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -139,6 +139,8 @@ function render(){
  $('paidBtn').disabled=!!m.paid||claimPending;
  $('paidBtn').textContent=m.paid?'Оплату підтверджено ✓':claimPending?'Очікує підтвердження…':'Я оплатив';
  $('debtNote').textContent=m.debtMonths?('Є борг за '+m.debtMonths+' міс.'):'';
+ $('emailInput').value=m.email||'';
+ $('emailStatus').textContent=m.email?'Нагадування надсилатимуться на '+m.email+'.':'E-mail для нагадувань ще не вказано.';
 
  const changed=m.services.filter(s=>s.priceChanged);
  if(changed.length){
@@ -174,7 +176,7 @@ function render(){
 async function loadMe(){
  try{
    const data=await api('/api/member/me');
-   current=data.member;showApp();render();await updatePushUi();
+   current=data.member;showApp();render();
  }catch(e){
    memberToken='';localStorage.removeItem(TOKEN_KEY);showGate('Доступ не активний. Попросіть адміністратора створити нове запрошення.');
  }
@@ -194,114 +196,62 @@ $('logoutBtn').addEventListener('click',()=>{
  memberToken='';localStorage.removeItem(TOKEN_KEY);current=null;showGate('Доступ на цьому пристрої завершено. Для повторного входу потрібне нове запрошення.');
 });
 
-function urlBase64ToUint8Array(base64String){
- const padding='='.repeat((4-base64String.length%4)%4);
- const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
- const rawData=atob(base64);
- return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)));
+function validEmail(value){
+ const email=String(value||'').trim();
+ return !email||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-async function updatePushUi(){
- const supported=('serviceWorker'in navigator)&&('PushManager'in window)&&('Notification'in window);
-
- if(isIOS&&!isStandalone){
-   $('enablePushBtn').disabled=true;
-   $('enablePushBtn').classList.remove('hidden');
-   $('disablePushBtn').classList.add('hidden');
-   $('testPushBtn').classList.add('hidden');
-   $('pushStatus').innerHTML='На iPhone/iPad Web Push працює тільки для вебзастосунку, доданого на головний екран. Відкрийте меню «Поділитися» → «На початковий екран», потім запустіть застосунок з іконки та увімкніть push.';
-   return;
+async function saveEmail(showToast=true){
+ const email=$('emailInput').value.trim();
+ if(!validEmail(email)){
+   $('emailStatus').textContent='Перевірте правильність e-mail.';
+   return false;
  }
-
- if(!supported){
-   $('enablePushBtn').disabled=true;
-   $('enablePushBtn').classList.remove('hidden');
-   $('disablePushBtn').classList.add('hidden');
-   $('testPushBtn').classList.add('hidden');
-   $('pushStatus').textContent='Цей браузер не надає Web Push для цього режиму.';
-   return;
- }
-
- if(Notification.permission==='denied'){
-   $('enablePushBtn').disabled=true;
-   $('enablePushBtn').classList.remove('hidden');
-   $('disablePushBtn').classList.add('hidden');
-   $('testPushBtn').classList.add('hidden');
-   $('pushStatus').innerHTML='Сповіщення заблоковані в налаштуваннях браузера. Дозвольте Notifications/Сповіщення для payment-confirm.onrender.com. У Windows також перевірте Settings → System → Notifications і дозвіл для вашого браузера.';
-   return;
- }
-
+ $('saveEmailBtn').disabled=true;
  try{
-   const reg=await navigator.serviceWorker.ready;
-   const sub=await reg.pushManager.getSubscription();
-   $('enablePushBtn').disabled=false;
-   $('enablePushBtn').classList.toggle('hidden',!!sub);
-   $('disablePushBtn').classList.toggle('hidden',!sub);
-   $('testPushBtn').classList.toggle('hidden',!sub);
-   if(sub){
-     $('pushStatus').textContent='Push-нагадування увімкнені. Натисніть «Тест push», щоб перевірити доставку.';
-   }else if(Notification.permission==='granted'){
-     $('pushStatus').textContent='Дозвіл на сповіщення є, але push ще не підключено.';
+   const data=await api('/api/member/email',{method:'PUT',body:JSON.stringify({email})});
+   current=data.member;
+   render();
+   if(showToast)toast(email?'E-mail збережено':'E-mail видалено');
+   return true;
+ }catch(e){
+   $('emailStatus').textContent=e.code==='INVALID_EMAIL'?'Перевірте правильність e-mail.':'Не вдалося зберегти e-mail.';
+   if(showToast)toast('Не вдалося зберегти e-mail');
+   return false;
+ }finally{
+   $('saveEmailBtn').disabled=false;
+ }
+}
+
+$('saveEmailBtn').addEventListener('click',()=>saveEmail(true));
+
+$('testEmailBtn').addEventListener('click',async()=>{
+ const email=$('emailInput').value.trim();
+ if(!email||!validEmail(email)){
+   $('emailStatus').textContent='Спочатку вкажіть правильний e-mail.';
+   return;
+ }
+ $('testEmailBtn').disabled=true;
+ try{
+   const saved=await saveEmail(false);
+   if(!saved)return;
+   await api('/api/member/email/test',{method:'POST'});
+   $('emailStatus').textContent='Тестовий лист відправлено на '+current.email+'. Перевірте також папку «Спам».';
+   toast('Тестовий лист відправлено');
+ }catch(e){
+   if(e.code==='EMAIL_NOT_CONFIGURED'){
+     $('emailStatus').textContent='Відправлення e-mail ще не налаштоване адміністратором.';
    }else{
-     $('pushStatus').textContent='Натисніть «Увімкнути push» і дозвольте сповіщення у системному вікні.';
+     $('emailStatus').textContent='Не вдалося відправити тестовий лист.';
    }
- }catch(e){
-   $('pushStatus').textContent='Не вдалося перевірити стан push. Оновіть сторінку та спробуйте ще раз.';
+   toast('Тестовий лист не відправлено');
+ }finally{
+   $('testEmailBtn').disabled=false;
  }
-}
-
-$('enablePushBtn').addEventListener('click',async()=>{
- try{
-   if(isIOS&&!isStandalone){updatePushUi();return}
-   if(!('Notification'in window)){updatePushUi();return}
-   if(Notification.permission==='denied'){updatePushUi();return}
-   if(Notification.permission!=='granted'){
-     const permission=await Notification.requestPermission();
-     if(permission!=='granted'){updatePushUi();return}
-   }
-   const keyData=await api('/api/push/public-key',{},false);
-   if(!keyData.configured||!keyData.publicKey){toast('Push ще не налаштований на сервері');return}
-   const reg=await navigator.serviceWorker.ready;
-   const existing=await reg.pushManager.getSubscription();
-   const subscription=existing||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(keyData.publicKey)});
-   await api('/api/member/push',{method:'POST',body:JSON.stringify({subscription})});
-   toast('Push-нагадування увімкнено');await updatePushUi();
- }catch(e){
-   console.error(e);
-   $('pushStatus').textContent='Не вдалося підключити push: '+(e&&e.name?e.name:'помилка браузера')+'.';
-   toast('Не вдалося увімкнути push');
- }
-});
-
-$('testPushBtn').addEventListener('click',async()=>{
- $('testPushBtn').disabled=true;
- try{
-   await api('/api/member/push/test',{method:'POST'});
-   toast('Тестове push відправлено');
-   $('pushStatus').textContent='Тестове сповіщення відправлено. Якщо його не видно, перевірте системні дозволи та режим «Не турбувати».';
- }catch(e){
-   console.error(e);
-   toast('Тест push не доставлено');
-   $('pushStatus').textContent=e.code==='NO_SUBSCRIPTION'
-     ?'Push-підписка не знайдена. Вимкніть і знову увімкніть push.'
-     :'Сервер не зміг відправити тестове сповіщення.';
- }finally{$('testPushBtn').disabled=false}
-});
-
-$('disablePushBtn').addEventListener('click',async()=>{
- try{
-   const reg=await navigator.serviceWorker.ready;
-   const sub=await reg.pushManager.getSubscription();
-   if(sub){
-     await api('/api/member/push',{method:'DELETE',body:JSON.stringify({endpoint:sub.endpoint})});
-     await sub.unsubscribe();
-   }
-   toast('Push-нагадування вимкнено');updatePushUi();
- }catch(e){toast('Не вдалося вимкнути push')}
 });
 
 const invite=new URLSearchParams(location.search).get('invite');
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=12').catch(()=>{});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=13').catch(()=>{});
 if(invite){
  $('gateTitle').textContent='Персональне запрошення';
  $('gateText').textContent='Після активації цей пристрій отримає доступ тільки до ваших підписок, сум та історії оплат.';
@@ -312,7 +262,7 @@ if(invite){
      const data=await api('/api/invite/redeem',{method:'POST',body:JSON.stringify({token:invite})},false);
      memberToken=data.token;localStorage.setItem(TOKEN_KEY,memberToken);current=data.member;
      history.replaceState({},'',location.pathname);
-     showApp();render();await updatePushUi();
+     showApp();render();
    }catch(e){
      $('gateStatus').textContent='Запрошення недійсне або вже використане.';
      $('acceptInviteBtn').disabled=false;
