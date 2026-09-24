@@ -15,6 +15,13 @@
 :root{--bg:#f6f7f5;--card:#fff;--text:#14251e;--muted:#6b7671;--line:#dfe4e1;--soft:#f1f4f2;--green:#245d49;--green2:#2f745b;--greenSoft:#e9f3ee;--red:#b42318;--redSoft:#fff0ee;--amber:#9a6700;--amberSoft:#fff7dc;--blue:#175cd3;--shadow:0 8px 24px rgba(20,37,30,.06)}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
 body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}button,input,select,textarea{font:inherit}button{cursor:pointer}
+body:not(.authenticated) .app,body:not(.authenticated) .closeMonthBar{visibility:hidden}
+.authGate{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:20px}
+body.authenticated .authGate{display:none}
+.authCard{width:min(420px,100%);background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
+.authCard h2{margin:0 0 8px;font-size:24px}.authCard p{margin:0 0 16px;color:var(--muted);line-height:1.45}
+.authStatus{min-height:20px;margin-top:10px;font-size:12px;color:var(--muted)}
+.cloudStatus{font-size:11px;color:var(--muted);margin-top:3px}
 .app{max-width:1100px;margin:0 auto;padding:18px 14px 90px}.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:3px 0 14px}
 .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:750}h1{font-size:26px;letter-spacing:-.03em;margin:4px 0 0}
 .small{font-size:12px;color:var(--muted)}.nav{display:flex;gap:7px;overflow:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
@@ -44,8 +51,23 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 </style>
 </head>
 <body>
+<div class="authGate" id="authGate">
+  <div class="authCard">
+    <div class="eyebrow">Приватний доступ</div>
+    <h2>Контроль оплат</h2>
+    <p>Введіть PIN-код, щоб завантажити дані з приватного сховища.</p>
+    <form id="authForm">
+      <div class="field"><label>PIN-код</label><input id="authPin" type="password" inputmode="numeric" autocomplete="current-password" required></div>
+      <button class="btn" style="width:100%;margin-top:12px" id="authSubmit" type="submit">Увійти</button>
+    </form>
+    <div class="authStatus" id="authStatus"></div>
+  </div>
+</div>
 <main class="app">
-<div class="hero"><div><div class="eyebrow">Підписки та оплати</div><h1>Контроль оплат</h1></div><div class="small" id="today"></div></div>
+<div class="hero">
+  <div><div class="eyebrow">Підписки та оплати</div><h1>Контроль оплат</h1><div class="cloudStatus" id="cloudStatus">Хмара</div></div>
+  <div style="display:flex;align-items:center;gap:8px"><div class="small" id="today"></div><button class="btn secondary smallBtn" id="logoutBtn">Вийти</button></div>
+</div>
 <div class="nav">
 <button class="active" data-view="dashboard">Оплати</button>
 <button data-view="members">Учасники</button>
@@ -127,7 +149,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 </div>
 <div class="card">
 <h2 style="font-size:18px;margin:0 0 12px">Групи та картки</h2>
-<div class="notice warning">Номери карток зберігаються тільки у localStorage цього браузера і не записуються в GitHub.</div>
+<div class="notice">Номери карток та інші дані зберігаються у приватному backend-сховищі й доступні тільки після входу.</div>
 <div id="groupSettings"></div>
 <button class="btn secondary" style="margin-top:10px" id="addGroupBtn">+ Додати групу</button>
 </div>
@@ -199,18 +221,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 <script>
 (function(){
 const KEY='payment-confirm-v1';
-const DEFAULT_SERVICES=[
-{id:'apple-one',name:'Apple One',amount:13.95,currency:'USD',nextDate:'2026-10-16',interval:1,capacity:6,priceChanged:false},
-{id:'netflix-uhd',name:'Netflix Ultra HD',amount:9.99,currency:'EUR',nextDate:'2026-10-21',interval:1,capacity:3,priceChanged:false},
-{id:'spotify',name:'Spotify Premium',amount:7.99,currency:'USD',nextDate:'2026-10-16',interval:1,capacity:6,priceChanged:false},
-{id:'youtube',name:'YouTube Premium',amount:8.49,currency:'USD',nextDate:'2026-10-21',interval:1,capacity:6,priceChanged:false},
-{id:'icloud',name:'iCloud+',amount:9.99,currency:'USD',nextDate:'2026-10-06',interval:1,capacity:2,priceChanged:false},
-{id:'sweet-tv',name:'Sweet TV',amount:400,currency:'UAH',nextDate:'2026-10-19',interval:1,capacity:2,priceChanged:false},
-{id:'chatgpt-plus',name:'ChatGPT Plus',amount:24,currency:'USD',nextDate:'2026-10-05',interval:1,capacity:1,priceChanged:false},
-{id:'google-one',name:'Google One',amount:191.58,currency:'UAH',nextDate:'2027-04-15',interval:12,capacity:2,priceChanged:false},
-{id:'mondly',name:'Mondly',amount:39.99,currency:'UAH',nextDate:'2026-11-16',interval:12,capacity:6,priceChanged:false},
-{id:'telegram',name:'Telegram',amount:2.50,currency:'USD',nextDate:'2027-03-19',interval:12,capacity:1,priceChanged:false}
-];
+const DEFAULT_SERVICES=[];
 const $=id=>document.getElementById(id);
 const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random();
 const num=v=>{const n=parseFloat(String(v??'').replace(/\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0};
@@ -236,52 +247,116 @@ const defaultState=()=>({
   cycle:currentMonth(),
   billingDay:15,
   rates:{
-    dynamic:{USD:45.0005,EUR:51.7706,lastUpdated:null},
-    static:{USD:44.93,EUR:52.27}
+    dynamic:{USD:0,EUR:0,lastUpdated:null},
+    static:{USD:0,EUR:0}
   },
-  services:JSON.parse(JSON.stringify(DEFAULT_SERVICES)),
-  groups:[
-    {id:'main',name:'Моя family',cardHolder:'',cardNumber:''},
-    {id:'netflix-dasha',name:'Netflix family Даші',cardHolder:'',cardNumber:''}
-  ],
+  services:[],
+  groups:[],
   members:[],
   archives:[]
 });
 let state=defaultState(),editingMember=null,editingService=null,activeView='dashboard';
+const API_BASE='https://payment-confirm-api.onrender.com';
+const AUTH_KEY='payment-confirm-auth-token';
+let authToken=sessionStorage.getItem(AUTH_KEY)||'';
+let cloudReady=false;
+let localStateFound=false;
+let saveQueue=Promise.resolve();
 
-function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function normalizeState(v){
+ if(!v||typeof v!=='object')return defaultState();
+ const base=defaultState();
+ let rates;
+ if(v.rates&&v.rates.dynamic&&v.rates.static){
+   rates={
+     dynamic:{...base.rates.dynamic,...v.rates.dynamic},
+     static:{...base.rates.static,...v.rates.static}
+   };
+ }else{
+   const old=v.rates||{};
+   rates={
+     dynamic:{USD:num(old.USD),EUR:num(old.EUR),lastUpdated:old.lastUpdated||null},
+     static:{...base.rates.static}
+   };
+ }
+ return {...base,...v,rates,services:Array.isArray(v.services)?v.services:[],groups:Array.isArray(v.groups)?v.groups:[],members:Array.isArray(v.members)?v.members:[],archives:Array.isArray(v.archives)?v.archives:[]};
+}
 function load(){
  try{
-   const v=JSON.parse(localStorage.getItem(KEY));
-   if(v&&v.services&&v.members){
-     const base=defaultState();
-     let rates;
-     if(v.rates&&v.rates.dynamic&&v.rates.static){
-       rates={
-         dynamic:{...base.rates.dynamic,...v.rates.dynamic},
-         static:{...base.rates.static,...v.rates.static}
-       };
-     }else{
-       const old=v.rates||{};
-       rates={
-         dynamic:{
-           USD:num(old.USD)||base.rates.dynamic.USD,
-           EUR:num(old.EUR)||base.rates.dynamic.EUR,
-           lastUpdated:old.lastUpdated||null
-         },
-         static:{...base.rates.static}
-       };
-     }
-     state={...base,...v,rates};
-     if((!state.members||state.members.length===0)&&(!state.archives||state.archives.length===0)&&state.groups&&state.groups.length===1){
-       const first=state.groups[0];
-       state.groups=[
-         {...first,id:first.id||'main',name:'Моя family'},
-         {id:'netflix-dasha',name:'Netflix family Даші',cardHolder:'',cardNumber:''}
-       ];
-     }
+   const raw=localStorage.getItem(KEY);
+   if(!raw)return;
+   const v=JSON.parse(raw);
+   if(v&&Array.isArray(v.services)&&Array.isArray(v.members)){
+     state=normalizeState(v);
+     localStateFound=true;
    }
  }catch(e){}
+}
+async function api(path,options={}){
+ const headers={'Content-Type':'application/json',...(options.headers||{})};
+ if(authToken)headers.Authorization='Bearer '+authToken;
+ const res=await fetch(API_BASE+path,{...options,headers,cache:'no-store'});
+ let data={};
+ try{data=await res.json()}catch(e){}
+ if(res.status===401&&path!=='/api/auth/login'){
+   authToken='';sessionStorage.removeItem(AUTH_KEY);cloudReady=false;document.body.classList.remove('authenticated');
+   throw new Error('AUTH_REQUIRED');
+ }
+ if(!res.ok){
+   const err=new Error(data.message||data.error||('HTTP '+res.status));
+   err.status=res.status;err.code=data.error;throw err;
+ }
+ return data;
+}
+function setCloudStatus(text){if($('cloudStatus'))$('cloudStatus').textContent=text}
+function queueCloudSave(snapshot){
+ saveQueue=saveQueue.then(async()=>{
+   setCloudStatus('Збереження…');
+   await api('/api/state',{method:'PUT',body:JSON.stringify({state:snapshot})});
+   setCloudStatus('Збережено у хмарі');
+ }).catch(err=>{
+   setCloudStatus('Помилка синхронізації');
+   console.error(err);
+ });
+}
+function save(){
+ if(cloudReady&&authToken){
+   queueCloudSave(JSON.parse(JSON.stringify(state)));
+ }else{
+   localStorage.setItem(KEY,JSON.stringify(state));
+ }
+}
+async function loadCloudState(){
+ const doc=await api('/api/state');
+ if(doc&&doc.initialized&&doc.state){
+   state=normalizeState(doc.state);
+   cloudReady=true;
+   localStorage.removeItem(KEY);
+   localStateFound=false;
+   setCloudStatus('Завантажено з хмари');
+   return;
+ }
+ if(localStateFound){
+   cloudReady=true;
+   await api('/api/state',{method:'PUT',body:JSON.stringify({state})});
+   localStorage.removeItem(KEY);
+   localStateFound=false;
+   setCloudStatus('Дані перенесено у хмару');
+   return;
+ }
+ throw Object.assign(new Error('CLOUD_NOT_INITIALIZED'),{code:'CLOUD_NOT_INITIALIZED'});
+}
+async function unlockApp(){
+ await loadCloudState();
+ document.body.classList.add('authenticated');
+ render();
+ rollServiceDates();
+ maybeRefreshRates();
+}
+async function tryExistingSession(){
+ if(!authToken)return false;
+ try{await api('/api/auth/me');await unlockApp();return true}
+ catch(e){authToken='';sessionStorage.removeItem(AUTH_KEY);cloudReady=false;return false}
 }
 function toast(t){$('toast').textContent=t;$('toast').classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').classList.remove('show'),1800)}
 function openModal(id){$(id).classList.add('show')}
@@ -437,7 +512,9 @@ function openMember(id){
  editingMember=id||null;const m=id?state.members.find(x=>x.id===id):null;
  $('memberModalTitle').textContent=m?'Редагувати учасника':'Новий учасник';
  $('memberName').value=m?m.name:'';$('memberExcluded').checked=!!(m&&m.excluded);$('memberNote').value=m?m.note||'':'';
- $('memberGroup').innerHTML=state.groups.map(g=>'<option value="'+esc(g.id)+'">'+esc(g.name)+'</option>').join('');$('memberGroup').value=m?m.groupId:state.groups[0].id;
+ $('memberGroup').innerHTML=state.groups.map(g=>'<option value="'+esc(g.id)+'">'+esc(g.name)+'</option>').join('');
+ if(!state.groups.length){toast('Спочатку додайте групу в налаштуваннях');return}
+ $('memberGroup').value=m?m.groupId:state.groups[0].id;
  $('assignmentList').innerHTML=assignmentHtml(m);
  document.querySelectorAll('[data-as-active]').forEach(x=>x.addEventListener('change',()=>{document.querySelector('[data-as-opts="'+x.dataset.asActive+'"]').classList.toggle('hidden',!x.checked)}));
  openModal('memberModal');
@@ -591,8 +668,37 @@ $('importFile').addEventListener('change',async()=>{
 });
 $('resetBtn').addEventListener('click',()=>{if(confirm('Повністю очистити всі дані цього застосунку?')){state=defaultState();save();render();toast('Дані очищено')}});
 
-load();rollServiceDates();render();maybeRefreshRates();
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=8').catch(()=>{}));
+$('authForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const pin=$('authPin').value.trim();
+ if(!pin)return;
+ $('authSubmit').disabled=true;
+ $('authStatus').textContent='Перевірка…';
+ try{
+   const login=await api('/api/auth/login',{method:'POST',body:JSON.stringify({pin})});
+   authToken=login.token;
+   sessionStorage.setItem(AUTH_KEY,authToken);
+   await unlockApp();
+   $('authPin').value='';
+   $('authStatus').textContent='';
+ }catch(err){
+   if(err.code==='PIN_NOT_CONFIGURED')$('authStatus').textContent='PIN ще не налаштований на сервері.';
+   else if(err.code==='INVALID_PIN')$('authStatus').textContent='Невірний PIN-код.';
+   else if(err.code==='TOO_MANY_ATTEMPTS')$('authStatus').textContent='Забагато спроб. Спробуйте пізніше.';
+   else if(err.code==='CLOUD_NOT_INITIALIZED')$('authStatus').textContent='Хмарне сховище порожнє. Перший вхід потрібно виконати на пристрої, де вже є заповнені дані.';
+   else $('authStatus').textContent='Не вдалося підключитися до сервера.';
+   authToken='';sessionStorage.removeItem(AUTH_KEY);cloudReady=false;
+ }finally{$('authSubmit').disabled=false}
+});
+$('logoutBtn').addEventListener('click',async()=>{
+ try{await api('/api/auth/logout',{method:'POST'})}catch(e){}
+ authToken='';sessionStorage.removeItem(AUTH_KEY);cloudReady=false;
+ document.body.classList.remove('authenticated');
+ $('authStatus').textContent='';
+});
+load();
+tryExistingSession();
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=9').catch(()=>{}));
 })();
 </script>
 </body>
