@@ -1,4 +1,4 @@
-const CACHE='payment-confirm-v14';
+const CACHE='payment-confirm-v15';
 const ASSETS=['./','./index.html','./member.html','./manifest.webmanifest','./member.webmanifest','./icon.svg'];
 
 self.addEventListener('install',e=>{
