@@ -97,6 +97,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--green2);box-shadow:0 
 <div id="attentionList"></div>
 </div>
 <div class="card section">
+<div class="sectionHead"><h2>Заявки на підтвердження оплати</h2><button class="btn secondary smallBtn" id="refreshClaimsBtn">Оновити</button></div>
+<div class="small" style="margin-bottom:8px">Після натискання учасником «Я оплатив» оплата не зараховується автоматично. Потрібне підтвердження адміністратора.</div>
+<div id="paymentClaimsList"></div>
+</div>
+<div class="card section">
 <div class="sectionHead"><h2>Стан оплат</h2><button class="btn secondary smallBtn" id="copyMessagesBtn">Сформувати повідомлення</button></div>
 <div id="paymentList" class="payList"></div>
 </div>
@@ -566,6 +571,9 @@ async function refreshCloudState(showToast=false){
 function historyLabel(type){
  return ({
    self_mark_paid:'Учасник відмітив оплату',
+   payment_claim_submitted:'Учасник повідомив про оплату',
+   admin_confirm_paid:'Адміністратор підтвердив оплату',
+   admin_reject_payment:'Адміністратор відхилив підтвердження',
    admin_mark_paid:'Адміністратор відмітив оплату',
    admin_unmark_paid:'Позначку оплати знято',
    archive:'Закритий місяць'
@@ -616,6 +624,43 @@ async function renderAccess(){
  }
 }
 
+async function renderPaymentClaims(){
+ if(!$('paymentClaimsList'))return;
+ $('paymentClaimsList').innerHTML='<div class="empty">Завантаження…</div>';
+ try{
+   const data=await api('/api/admin/payment-claims');
+   const claims=data.claims||[];
+   if(!claims.length){$('paymentClaimsList').innerHTML='<div class="empty">Нових заявок немає.</div>';return}
+   $('paymentClaimsList').innerHTML=claims.map(x=>
+     '<div class="attentionItem"><div class="attentionTop"><div><div class="rowTitle">'+esc(x.name)+'</div>'+
+     '<div class="rowMeta">Повідомив про оплату'+(x.claimedAt?' · '+new Intl.DateTimeFormat('uk-UA',{dateStyle:'short',timeStyle:'short'}).format(new Date(x.claimedAt)):'')+'</div>'+
+     '</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">'+
+     '<div class="attentionAmount">'+(x.amount&&hasMoney(x.amount)?esc(formatMoneySet(x.amount)):'')+'</div>'+
+     '<button class="btn smallBtn" data-confirm-claim="'+esc(x.id)+'">Підтвердити</button>'+
+     '<button class="btn danger smallBtn" data-reject-claim="'+esc(x.id)+'">Відхилити</button>'+
+     '</div></div></div>'
+   ).join('');
+   document.querySelectorAll('[data-confirm-claim]').forEach(b=>b.addEventListener('click',()=>resolvePaymentClaim(b.dataset.confirmClaim,'confirm')));
+   document.querySelectorAll('[data-reject-claim]').forEach(b=>b.addEventListener('click',()=>resolvePaymentClaim(b.dataset.rejectClaim,'reject')));
+ }catch(e){
+   $('paymentClaimsList').innerHTML='<div class="empty">Не вдалося завантажити заявки.</div>';
+ }
+}
+
+async function resolvePaymentClaim(claimId,action){
+ const isConfirm=action==='confirm';
+ if(!confirm(isConfirm?'Підтвердити отримання оплати?':'Відхилити цю заявку про оплату?'))return;
+ try{
+   await api('/api/admin/payment-claims/resolve',{method:'POST',body:JSON.stringify({claimId,action})});
+   toast(isConfirm?'Оплату підтверджено':'Заявку відхилено');
+   await refreshCloudState(false);
+   await renderPaymentClaims();
+   if(activeView==='history')renderHistory();
+ }catch(e){
+   toast('Не вдалося обробити заявку');
+ }
+}
+
 async function renderHistory(){
  if(!$('historyList'))return;
  $('historyList').innerHTML='<div class="empty">Завантаження…</div>';
@@ -638,6 +683,7 @@ async function renderHistory(){
 function render(){
  $('today').textContent=new Intl.DateTimeFormat('uk-UA',{day:'2-digit',month:'long',year:'numeric'}).format(today());
  renderDashboard();renderMembers();renderServices();renderArchive();renderSettings();renderNav();
+ if(activeView==='dashboard')renderPaymentClaims();
  if(activeView==='access')renderAccess();
  if(activeView==='history')renderHistory();
 }
@@ -752,6 +798,7 @@ function showMessages(){
 }
 $('copyMessagesBtn').addEventListener('click',showMessages);
 $('refreshCloudBtn').addEventListener('click',()=>refreshCloudState(true));
+$('refreshClaimsBtn').addEventListener('click',renderPaymentClaims);
 $('refreshAccessBtn').addEventListener('click',renderAccess);
 $('refreshHistoryBtn').addEventListener('click',renderHistory);
 $('copyInviteBtn').addEventListener('click',async()=>{
@@ -853,7 +900,7 @@ tryExistingSession();
 setInterval(()=>{
  if(document.body.classList.contains('authenticated')&&!document.querySelector('.modalBack.show')) refreshCloudState(false);
 },45000);
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=10').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=11').catch(()=>{}));
 })();
 </script>
 </body>
